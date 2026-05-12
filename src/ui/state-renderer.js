@@ -34,7 +34,7 @@ export function renderUI(gameState, context) {
       break
 
     case 'endgame':
-      renderEndgameUI(gameState)
+      renderEndgameUI(gameState, context)
       break
   }
 }

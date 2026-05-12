@@ -48,6 +48,7 @@ import { resolveArenaCollision, resolveMapWallCollisions, resolvePlayerCollision
 import { createWorld } from './game/scene';
 import { initAudio, updateEngineSound, playCollectSound, playCollisionSound, playDamageSound, playDespawnSound, playSpeedBoostSound, playBombDropSound, playExplosionSound, startShieldSound, stopShieldSound, startGhostSound, stopGhostSound } from './game/audio/sound-manager';
 import { isLocalOrPrivateHost, lerpAngle, shortId } from './game/utils';
+import { buildEndgameResults, shouldEndMatch } from './game/win/win-logic';
 import { createLobbyController } from './lobby/lobby-controller';
 import { createLobbyUI } from './ui/lobby-ui';
 import { submitName, validatePlayerName, updateNameValidation, initNameUI } from './lobby/lobby-helpers';
@@ -239,6 +240,7 @@ export function setLobbyRef(lobby) {
 // Game state
 export const gameState = {
   phase: 'lobby', // 'lobby' | 'playing' | 'editing' | 'paused' | 'endgame'
+  endgameResults: null,
 };
 
 
@@ -266,6 +268,7 @@ function resetMatch() {
 
   // Reset life, score, timer, and respawn all players at spawn
   matchTime = 0;
+  gameState.endgameResults = null;
   setLastUnpausedTime(performance.now());
   // Local player
   playerLives[selfId].reset(INITIAL_LIFE);
@@ -761,6 +764,10 @@ function setupRoom() {
       gameState.phase = payload.phase;
     }
 
+    if ('endgameResults' in payload) {
+      gameState.endgameResults = payload.endgameResults ?? null;
+    }
+
     participantIds.add(peerId);
     refreshHostRole(payload.hostId ?? peerId);
 
@@ -922,6 +929,7 @@ function sendSnapshotPacket(targetPeers) {
   sendSnapshot({
     hostId: selfId,
     phase: lobby?.state.phase ?? 'playing',
+    endgameResults: gameState.endgameResults,
     matchTime,
     players: getAllPlayers().map((player) => ({
       id: player.id,
@@ -1011,7 +1019,14 @@ function loop() {
 
   try {
   
-  renderUI(gameState, { lobby, playHud, selfId, shortId, getActiveParticipantIds, lobbyUI});
+  const handleNewMatch = () => {
+    if (isHost()) {
+      resetMatch();
+      sendSnapshotPacket();
+    }
+  };
+
+  renderUI(gameState, { lobby, playHud, selfId, shortId, getActiveParticipantIds, lobbyUI, hostId, handleNewMatch });
   if (typeof attachNewRoomButtonHandler === 'function') attachNewRoomButtonHandler();
 
   // LOBBY GATING
@@ -1102,6 +1117,8 @@ function loop() {
           }
         }
       }
+
+      maybeFinishMatch();
     }
   } else {
     // If paused, just update the lastUnpausedTime so timer resumes smoothly
@@ -1167,6 +1184,34 @@ function loop() {
 
   } catch (err) {
   console.error('LOOP ERROR:', err);
+}
+
+function maybeFinishMatch() {
+  if (!isHost() || gameState.phase !== 'playing') {
+    return;
+  }
+
+  const activeParticipantIds = getActiveParticipantIds();
+  if (!shouldEndMatch(playerLives, activeParticipantIds)) {
+    return;
+  }
+
+  gameState.endgameResults = buildEndgameResults({
+    playerLives,
+    participantIds: activeParticipantIds,
+    getPlayerById: (id) => {
+      if (id === selfId) return localPlayer;
+      return remotePlayers.get(id) ?? null;
+    },
+    getDisplayName: (id) => lobby?.state?.players?.get(id)?.name?.trim() || shortId(id),
+  });
+
+  gameState.phase = 'endgame';
+  if (lobby) {
+    lobby.state.phase = 'endgame';
+  }
+
+  sendSnapshotPacket();
 }
 
 function setAbilitySlot(slot, iconEl, badgeEl, heldAbility) {
