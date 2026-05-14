@@ -30,7 +30,7 @@ export function renderUI(gameState, context) {
       break
 
     case 'playing':
-      renderPlayingUI(gameState)
+      renderPlayingUI(gameState, context)
       break
 
     case 'endgame':

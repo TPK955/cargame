@@ -55,6 +55,42 @@
   font-size: 2.2rem;
   margin-bottom: 0.7em;
 }
+
+.pause-menu__room-label {
+  margin: 0 0 0.65rem;
+  color: #d5ebff;
+  font-weight: 700;
+}
+
+.pause-menu__host-label {
+  margin: 0 0 0.7rem;
+  color: #c4e7ff;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.pause-menu__room-actions {
+  display: flex;
+  gap: 0.55rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 0.8rem;
+}
+
+.pause-menu__room-actions button {
+  padding: 0.48rem 0.9rem;
+  border-radius: 999px;
+  border: 0;
+  background: linear-gradient(135deg, #0b789b, #08a2be);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pause-menu__room-actions button:hover {
+  filter: brightness(1.08);
+}
+
 #match-timer {
   color: #fff;
   font-size: 1.6rem;
@@ -860,6 +896,55 @@ body {
   box-shadow: 0 16px 40px rgba(18, 72, 95, 0.18);
   pointer-events: auto;
   margin-bottom: 1rem;
+}
+
+.player-list {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.player-list__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.player-list__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-list__status {
+  font-weight: 700;
+}
+
+body[data-state="playing"] #lobby-list {
+  position: fixed;
+  top: 32px;
+  left: 32px;
+  max-width: 17.5rem;
+  min-width: 14rem;
+  margin: 0;
+  padding: 0.8rem 1rem;
+  border-radius: 16px;
+  border: 0;
+  background: rgba(34, 34, 34, 0.92);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+  backdrop-filter: none;
+  pointer-events: none;
+  z-index: 99999;
+}
+
+body[data-state="playing"] #lobby-list .eyebrow {
+  color: #fff;
+  margin-bottom: 0.55rem;
+}
+
+body[data-state="playing"] #lobby-list .player-list__status {
+  color: #9ee6ff;
 }
 
 .eyebrow {

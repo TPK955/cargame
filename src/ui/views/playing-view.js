@@ -1,10 +1,24 @@
 import { show, hide } from '../dom.js';
 
-export function renderPlayingUI(gameState) {
+export function renderPlayingUI(gameState, context) {
   document.body.dataset.state = 'playing'
 
-  // jätetään tämä näkyviin!
+  if (context?.lobby && context?.lobbyUI) {
+    context.lobbyUI.render(
+      context.lobby,
+      context.selfId,
+      context.getActiveParticipantIds,
+      context.shortId,
+      {
+        phase: 'playing',
+        getHealthPercent: context.getHealthPercent,
+      }
+    )
+  }
+
   show('#lobby-list')
+  hide('.hud__card')
+  hide('.hud__card--small')
 
   hide('#toggle-play')
   hide('.name-input-group')
@@ -18,6 +32,7 @@ export function renderPlayingUI(gameState) {
 }
 
 export function cleanupPlayingUI() {
+  show('.hud__card')
   hide('#ability-slots')
   hide('#ability-cooldown-indicator')
 }

@@ -1,5 +1,7 @@
 import { show, hide } from '../dom.js';
 
+let lastEndgameSignature = '';
+
 export function renderEndgameUI(gameState, context) {
   document.body.dataset.state = 'endgame'
 
@@ -23,7 +25,17 @@ export function renderEndgameUI(gameState, context) {
   const rows = topThree.length > 0 ? topThree : fallbackRows;
 
   const isHost = context?.selfId === context?.hostId;
-  
+  const endgameSignature = JSON.stringify({
+    winnerName,
+    rows: rows.slice(0, 3),
+    isHost,
+  });
+
+  const hasRenderedPanel = Boolean(lobbyList.querySelector('.endgame-panel'));
+  if (hasRenderedPanel && endgameSignature === lastEndgameSignature) {
+    return;
+  }
+
   lobbyList.innerHTML = `
     <div class="endgame-panel">
       <p class="eyebrow">Match Over</p>
@@ -41,11 +53,13 @@ export function renderEndgameUI(gameState, context) {
     </div>
   `;
 
+  lastEndgameSignature = endgameSignature;
+
   // Attach event listener for new match button
   if (isHost) {
     const newMatchBtn = document.getElementById('endgame-new-match-btn');
     if (newMatchBtn && typeof context?.handleNewMatch === 'function') {
-      newMatchBtn.addEventListener('click', context.handleNewMatch);
+      newMatchBtn.onclick = context.handleNewMatch;
     }
   }
 }
