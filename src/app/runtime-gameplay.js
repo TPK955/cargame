@@ -27,6 +27,7 @@ import {
   playSpeedBoostSound,
   startGhostSound,
   startShieldSound,
+  stopAllVehicleSounds,
   stopGhostSound,
   stopShieldSound,
   updateEngineSound,
@@ -90,6 +91,8 @@ export function loop(context) {
     });
 
     if (context.gameState.phase !== 'playing') {
+      stopAllVehicleSounds();
+
       context.updateScoreDisplay();
       context.world.render();
       requestAnimationFrame(context.callbacks.loop);
@@ -157,14 +160,15 @@ export function loop(context) {
     const nowSeconds = performance.now() / 1000;
     const shieldActive = (context.localPlayer.shield?.activeUntil || 0) > nowSeconds;
     const ghostActive = (context.localPlayer.ghost?.activeUntil || 0) > nowSeconds;
+    const isAlive = context.playerLives[context.selfId]?.isAlive();
 
-    if (shieldActive) {
+    if (isAlive && shieldActive) {
       startShieldSound();
     } else {
       stopShieldSound();
     }
 
-    if (ghostActive) {
+    if (isAlive && ghostActive) {
       startGhostSound();
     } else {
       stopGhostSound();
@@ -184,11 +188,12 @@ export function loop(context) {
     const ramp = context.localPlayer.speedRamp || 0;
     const boostActive = context.localPlayer.abilities?.speedBoost?.activeUntil > (performance.now() / 1000);
 
-    if (context.playerLives[context.selfId]?.isAlive()) {
+    if (isAlive) {
       updateEngineSound(ramp, boostActive ? 1 : 0);
     } else {
       context.localPlayer.speedRamp = 0;
       updateEngineSound(0, 0);
+      stopAllVehicleSounds();
     }
 
     requestAnimationFrame(context.callbacks.loop);

@@ -202,7 +202,7 @@ export function playDamageSound() {
   src.buffer = damageBuffer;
 
   // slightly lower pitch and add variation to avoid repetition
-  src.playbackRate.value = 0.9 + Math.random() * 0.2;
+  //src.playbackRate.value = 0.9 + Math.random() * 0.2;
 
   const gain = ctx.createGain();
   gain.gain.value = 0.7;
@@ -375,4 +375,11 @@ export function stopGhostSound() {
   ghostGain = null;
 
   ghostPlaying = false;
+}
+
+export function stopAllVehicleSounds() {
+  // Stop all vehicle-related continuous sounds when player despawns
+  updateEngineSound(0, 0);
+  stopShieldSound();
+  stopGhostSound();
 }
