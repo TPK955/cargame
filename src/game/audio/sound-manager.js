@@ -23,6 +23,7 @@ let despawnBuffer = null;
 let speedBoostBuffer = null;
 let shieldBuffer = null;
 let ghostBuffer = null;
+let fanfareBuffer = null;
 
 let ghostSource = null;
 let ghostGain = null;
@@ -57,12 +58,13 @@ export async function initAudio() {
   explosionBuffer = await loadSound("/sounds/explosion.wav");
   ghostBuffer = await loadSound("/sounds/ghost.wav");
   bombDropBuffer = await loadSound("/sounds/bomb_drop.wav");
+  fanfareBuffer = await loadSound("/sounds/fanfare.wav");
   engineSource = ctx.createBufferSource();
   engineSource.buffer = engineBuffer;
   engineSource.loop = true;
 
   engineGain = ctx.createGain();
-  engineGain.gain.value = null;
+  engineGain.gain.value = 0;
 
   engineSource.connect(engineGain).connect(ctx.destination);
   engineSource.start(0);
@@ -202,7 +204,7 @@ export function playDamageSound() {
   src.buffer = damageBuffer;
 
   // slightly lower pitch and add variation to avoid repetition
-  src.playbackRate.value = 0.9 + Math.random() * 0.2;
+  //src.playbackRate.value = 0.9 + Math.random() * 0.2;
 
   const gain = ctx.createGain();
   gain.gain.value = 0.7;
@@ -375,4 +377,29 @@ export function stopGhostSound() {
   ghostGain = null;
 
   ghostPlaying = false;
+}
+
+export function playFanfareSound() {
+  if (!initialized || !fanfareBuffer) return;
+
+  if (ctx.state === "suspended") {
+    ctx.resume();
+  }
+
+  const src = ctx.createBufferSource();
+  src.buffer = fanfareBuffer;
+
+  const gain = ctx.createGain();
+  gain.gain.value = 0.8;
+
+  src.connect(gain).connect(ctx.destination);
+
+  src.start(0);
+}
+
+export function stopAllVehicleSounds() {
+  // Stop all vehicle-related continuous sounds when player despawns
+  updateEngineSound(0, 0);
+  stopShieldSound();
+  stopGhostSound();
 }

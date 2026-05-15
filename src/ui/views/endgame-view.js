@@ -1,4 +1,5 @@
 import { show, hide } from '../dom.js';
+import { playFanfareSound } from '../../game/audio/sound-manager';
 
 let lastEndgameSignature = '';
 
@@ -54,6 +55,17 @@ export function renderEndgameUI(gameState, context) {
   `;
 
   lastEndgameSignature = endgameSignature;
+
+  // Play fanfare for local winner (only once per new endgame panel)
+  const winnerId = gameState?.endgameResults?.winnerId;
+  if (winnerId && context?.selfId && winnerId === context.selfId) {
+    try {
+      playFanfareSound();
+    } catch (e) {
+      // swallow audio errors
+      console.warn('Fanfare playback failed', e);
+    }
+  }
 
   // Attach event listener for new match button
   if (isHost) {
