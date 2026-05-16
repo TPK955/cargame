@@ -42,6 +42,12 @@ export function initPauseMenu() {
   pauseStatusLabel = document.getElementById('pause-status-label');
   pauseWhoLabel = document.getElementById('pause-who-label');
   gameplayNotification = document.getElementById('gameplay-notification');
+  
+  // Hide quit button initially (match hasn't started)
+  if (quitBtn) {
+    quitBtn.style.display = 'none';
+  }
+  
   if (resumeBtn) {
     resumeBtn.addEventListener('click', () => triggerPauseAction(false, 'resume'));
   }
@@ -65,10 +71,15 @@ export function initPauseMenu() {
   });
 }
 
-export function updateResumeButtonText(isPreMatch) {
+export function updatePauseMenuButtons(isPreMatch) {
   if (resumeBtn) {
     resumeBtn.textContent = isPreMatch ? 'Start' : 'Resume';
   }
+
+ if (quitBtn) {
+    quitBtn.style.display = isPreMatch ? 'none' : 'block';
+  }
+
 }
 
 export function setMatchStarted(started) {
@@ -124,7 +135,7 @@ function applyPauseNetworkEvent({ type, peerId, displayName }) {
     isPaused = true;
     if (pauseMenu) pauseMenu.style.display = 'flex';
     const isPreMatch = !matchStarted;
-    updateResumeButtonText(isPreMatch);
+    updatePauseMenuButtons(isPreMatch);
     // Show player name only if match has started
     if (pauseWhoLabel) pauseWhoLabel.textContent = isPreMatch ? 'Match paused before start.' : `${nameToShow} paused the game.`;
   } else if (type === 'resume') {
@@ -135,7 +146,7 @@ function applyPauseNetworkEvent({ type, peerId, displayName }) {
     if (pauseStatusLabel) pauseStatusLabel.textContent = matchStarted ? `${nameToShow} resumed the game.` : '';
     if (!matchStarted) {
       matchStarted = true;
-      updateResumeButtonText(false);
+      updatePauseMenuButtons(false);
     }
   } else if (type === 'quit') {
     isPaused = false;
