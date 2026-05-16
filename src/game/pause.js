@@ -98,8 +98,7 @@ function applyPauseNetworkEvent({ type, peerId, displayName }) {
   if (type === 'pause') {
     isPaused = true;
     if (pauseMenu) pauseMenu.style.display = 'flex';
-    if (pauseWhoLabel) pauseWhoLabel.textContent = nameToShow;
-    if (pauseStatusLabel) pauseStatusLabel.textContent = '';
+    if (pauseWhoLabel) pauseWhoLabel.textContent = `${nameToShow} paused the game.`;
   } else if (type === 'resume') {
     isPaused = false;
     if (pauseMenu) pauseMenu.style.display = 'none';
