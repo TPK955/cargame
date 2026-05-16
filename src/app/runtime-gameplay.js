@@ -46,7 +46,7 @@ import { renderUI } from '../ui/state-renderer.js';
 import { updateHeldAbilitySlots as renderHeldAbilitySlots } from './runtime-ability-ui.js';
 import { updateHpBar as updateHpBarDisplay } from './runtime-hud.js';
 import { applyLifeSnapshotForPlayer, getHealthPercent as getPlayerHealthPercent } from './runtime-life.js';
-import { getPaused, getLastUnpausedTime, setLastUnpausedTime } from '../game/pause.js';
+import { getPaused, getLastUnpausedTime, setLastUnpausedTime, showGameplayNotification } from '../game/pause.js';
 
 export function handleResize(context) {
   context.world.setSize(window.innerWidth, window.innerHeight);
@@ -215,6 +215,9 @@ function applyLifeTick(context) {
       if (localPlayer.group.parentNode) {
         world.remove(localPlayer.group);
       }
+      if (typeof showGameplayNotification === 'function') {
+        showGameplayNotification('You died', 10000);
+      }
       for (const [peerId, remoteLife] of Object.entries(playerLives)) {
         if (peerId !== selfId && remoteLife.isAlive() && remotePlayers.has(peerId) && remotePlayers.get(peerId).score !== undefined) {
           remotePlayers.get(peerId).score += 1;
@@ -229,6 +232,9 @@ function applyLifeTick(context) {
       playDamageSound();
       if (!playerLives[peerId].isAlive()) {
         playDespawnSound();
+        if (typeof showGameplayNotification === 'function') {
+        showGameplayNotification('You died', 10000);
+      }
         if (player.group.parentNode) {
           world.remove(player.group);
         }
@@ -540,7 +546,14 @@ export function applySnapshot(context, playerStates) {
         : 0;
     }
 
+    const wasAlive = context.playerLives[playerState.id]?.isAlive?.() ?? true;
     applyLifeSnapshotForPlayer(context.playerLives, context.constants.INITIAL_LIFE, playerState.id, playerState);
+    const nowAlive = context.playerLives[playerState.id]?.isAlive?.() ?? true;
+    if (wasAlive && !nowAlive) {
+      const playerName = context.session.lobby?.state?.players?.get(playerState.id)?.name ?? shortId(playerState.id);
+      showGameplayNotification(`${playerName} died`, 10000);
+    }
+
     player.pendingBombDrop = null;
     player.lastSeenAt = now;
 

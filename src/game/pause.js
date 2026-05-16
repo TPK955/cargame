@@ -10,6 +10,7 @@ let quitBtn = null;
 let pauseStatusLabel = null;
 let pauseWhoLabel = null;
 let gameplayNotification = null;
+let gameplayNotificationTimeout = null;
 let sendPause = null;
 let selfName = '';
 let matchStarted = false; // Track if match has actually begun
@@ -46,6 +47,9 @@ export function initPauseMenu() {
   // Hide quit button initially (match hasn't started)
   if (quitBtn) {
     quitBtn.style.display = 'none';
+  }
+  if (gameplayNotification) {
+    gameplayNotification.style.opacity = '0';
   }
   
   if (resumeBtn) {
@@ -84,6 +88,24 @@ export function updatePauseMenuButtons(isPreMatch) {
 
 export function setMatchStarted(started) {
   matchStarted = started;
+}
+
+export function showGameplayNotification(message, duration = 3000) {
+  if (!gameplayNotification) return;
+  if (gameplayNotificationTimeout) {
+    clearTimeout(gameplayNotificationTimeout);
+    gameplayNotificationTimeout = null;
+  }
+
+  gameplayNotification.textContent = message;
+  gameplayNotification.style.opacity = '1';
+
+  gameplayNotificationTimeout = setTimeout(() => {
+    if (gameplayNotification) {
+      gameplayNotification.style.opacity = '0';
+    }
+    gameplayNotificationTimeout = null;
+  }, duration);
 }
 
 import { gameState } from '../main.js';
