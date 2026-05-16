@@ -1006,6 +1006,31 @@ h1 {
   background: linear-gradient(135deg, #149367, #167d56);
 }
 
+/* Disabled/transparent variant for play button and ready button */
+#toggle-play:disabled,
+#toggle-play.disabled {
+  opacity: 0.38;
+  pointer-events: none;
+  filter: grayscale(40%);
+}
+
+/* Ready button styling (orange) */
+#ready-btn {
+  background: linear-gradient(135deg, #ff8a00, #ff6a00);
+  color: #fff;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.6rem 0.9rem;
+  margin-right: 0.2rem;
+  border: none;
+}
+
+#ready-btn:disabled,
+#ready-btn.disabled {
+  opacity: 0.38;
+  pointer-events: none;
+}
+
 .editor-toolbar {
   display: flex;
   gap: 0.55rem;

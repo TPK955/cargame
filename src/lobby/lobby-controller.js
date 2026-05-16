@@ -36,7 +36,8 @@ export function createLobbyController({
       setPlayerReady(state, selfId, ready);
       lobbyUI.render({ state }, selfId, getActiveParticipantIds, shortId);
       broadcastState();
-      maybeStart();
+      onStateChange?.();
+      // Host updates ready state; UI will decide when Play can be used
     } else {
       sendLobby({ type: 'ready', ready });
     }
@@ -72,7 +73,7 @@ export function createLobbyController({
       setPlayerReady(state, peerId, payload.ready);
       onStateChange?.();
       broadcastState();
-      maybeStart();
+      // Do not auto-start here; host will manually start via Play button
     }
 
     if (payload.type === 'name') {
@@ -152,21 +153,10 @@ export function createLobbyController({
   }
 
   function maybeStart() {
-    if (!isHost()) return;
-
-    const active = getActiveParticipantIds();
-
-    if (active.length < 2) {
-      return;
-    }
-
-    if (allPlayersReady(state, active)) {
-      state.phase = 'playing';
-      if (typeof sendLobby === 'function') {
-        sendLobby({ type: 'start' });
-      }
-      onStartGame();
-    }
+    // Deprecated: host used to auto-start when everyone was ready.
+    // We now require the host to manually start the match via the Play button.
+    // Keep function for backward compatibility but do not auto-start.
+    return;
   }
 
   return {

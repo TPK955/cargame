@@ -90,7 +90,7 @@ import { gameState } from '../main.js';
 
 function triggerPauseAction(paused, action = 'pause') {
   // Only allow pausing in 'playing' phase
-  if (!gameState || gameState.phase !== 'playing') {
+  if (!gameState || (gameState.phase !== 'playing') && (!matchStarted)) {
     console.warn('[pause] Cannot pause: not in playing phase');
     if (pauseStatusLabel) pauseStatusLabel.textContent = 'Cannot pause: only allowed during gameplay.';
     return;

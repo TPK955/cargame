@@ -102,6 +102,13 @@ export function setupRoom(context) {
       callbacks.resetMatch();
       requestAnimationFrame(callbacks.loop);
     },
+    onStateChange: () => {
+      // Re-render lobby UI and update Play button state
+      if (session.lobby) {
+        context.lobbyUI.render(session.lobby, selfId, callbacks.getActiveParticipantIds, shortId);
+      }
+      updatePlayButtonState(context);
+    },
   });
 
   session.lobby.state.players.set(selfId, {
@@ -124,6 +131,7 @@ export function setupRoom(context) {
 
     callbacks.refreshHostRole();
     updatePeerCount(context);
+    updatePlayButtonState(context);
 
     if (callbacks.isHost() && callbacks.isPeerActive(peerId)) {
       sendMapPacket(context, peerId);
@@ -158,6 +166,7 @@ export function setupRoom(context) {
     callbacks.syncActiveRoster();
     callbacks.refreshHostRole();
     updatePeerCount(context);
+    updatePlayButtonState(context);
 
     if (callbacks.isHost()) {
       sendSnapshotPacket(context);
@@ -224,10 +233,71 @@ export function setupRoom(context) {
 
     session.lobby.handleMessage(payload, peerId);
     updatePauseHostLabel(context);
+    updatePlayButtonState(context);
   });
 
   dom.playHud.style.display = 'block';
   setupPauseNetworking(session.room, localPlayer);
+
+  // Wire up host Play button behavior and initial state
+  const togglePlayBtn = document.getElementById('toggle-play');
+  function updatePlayButtonState(ctx) {
+    const btn = document.getElementById('toggle-play');
+    if (!btn) return;
+    const active = callbacks.getActiveParticipantIds();
+    const activeCount = active.length;
+    const players = session.lobby?.state?.players ?? new Map();
+    const readyCount = active.filter(id => players.get(id)?.ready).length;
+    // Always show the Play button, but disable for clients and when host doesn't meet criteria
+    btn.style.display = '';
+    const canStart = activeCount >= 2 && activeCount <= 4 && readyCount >= 2;
+    if (callbacks.isHost()) {
+      btn.disabled = !canStart;
+      btn.textContent = canStart ? 'Play Game' : `Play Game (${readyCount}/${Math.max(2, activeCount)})`;
+    } else {
+      // Clients see a disabled, transparent Play button
+      btn.disabled = true;
+      btn.textContent = `Play Game (host)`;
+    }
+
+    // Also update ready button appearance for local player
+    const readyBtn = document.getElementById('ready-btn');
+    if (readyBtn) {
+      const localReady = session.lobby?.state?.players?.get(selfId)?.ready ?? false;
+      readyBtn.disabled = !!localReady;
+      if (localReady) {
+        readyBtn.classList.add('disabled');
+      } else {
+        readyBtn.classList.remove('disabled');
+      }
+    }
+  }
+
+  if (togglePlayBtn) {
+    togglePlayBtn.addEventListener('click', () => {
+      if (!callbacks.isHost() || !session.lobby) return;
+      const active = callbacks.getActiveParticipantIds();
+      const players = session.lobby.state.players;
+      const readyCount = active.filter(id => players.get(id)?.ready).length;
+      if (!(active.length >= 2 && active.length <= 4 && readyCount >= 2)) {
+        // Safety: button should be disabled, but double-check
+        dom.statusLabel.textContent = 'Not enough ready players to start.';
+        return;
+      }
+
+      // Host sends start message to all peers
+      if (typeof session.sendLobby === 'function') {
+        session.sendLobby({ type: 'start' });
+      }
+      // Trigger local start
+      session.lobby.state.phase = 'playing';
+      // call configured onStartGame via lobby message handler
+      session.lobby && session.lobby.handleMessage && session.lobby.handleMessage({ type: 'start' }, selfId);
+    });
+  }
+
+  // Initialize Play button state
+  updatePlayButtonState(context);
 }
 
 export function updatePeerCount(context) {
