@@ -13,6 +13,7 @@
         <div class="pause-menu__content">
           <div id="pause-who-label" style="font-weight:bold;margin-bottom:0.5em;color:#fff;"></div>
           <h2>Paused</h2>
+          <p id="pause-status-label" class="pause-menu__status" style="margin:0.5em 0;color:#ddd;"></p>
           <p id="pause-room-label" class="pause-menu__room-label"></p>
           <p id="pause-host-label" class="pause-menu__host-label"></p>
           <div class="pause-menu__room-actions">
@@ -22,6 +23,7 @@
           <button id="new-match-btn" class="hud__new-match">New Match</button>
           <div id="match-timer">00:00</div>
           <button id="resume-btn" class="pause-menu__resume">Resume</button>
+          <button id="quit-btn" class="pause-menu__quit">Quit</button>
         </div>
       </div>
       <div id="play-hud" class="hud">
@@ -51,6 +53,7 @@
         </div>
       </div>
       <div id="editor-hud" class="hud" style="display:none"></div>
+      <div id="gameplay-notification" style="position:fixed;top:20%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:#fff;padding:1.5em 2em;border-radius:0.5em;font-size:1.2em;z-index:1000;pointer-events:none;opacity:0;transition:opacity 0.3s;text-align:center;max-width:80%;"></div>
       <div id="scene"></div>
       <div id="ability-slots" style="display:none">
         <div id="ability-slot-left" class="ability-slot" data-empty="true">

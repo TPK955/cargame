@@ -9,6 +9,7 @@ let resumeBtn = null;
 let quitBtn = null;
 let pauseStatusLabel = null;
 let pauseWhoLabel = null;
+let gameplayNotification = null;
 let sendPause = null;
 let selfName = '';
 
@@ -39,11 +40,24 @@ export function initPauseMenu() {
   quitBtn = document.getElementById('quit-btn');
   pauseStatusLabel = document.getElementById('pause-status-label');
   pauseWhoLabel = document.getElementById('pause-who-label');
+  gameplayNotification = document.getElementById('gameplay-notification');
   if (resumeBtn) {
     resumeBtn.addEventListener('click', () => triggerPauseAction(false, 'resume'));
   }
   if (quitBtn) {
-    quitBtn.addEventListener('click', () => triggerPauseAction(false, 'quit'));
+    quitBtn.addEventListener('click', () => {
+      // Quit button: broadcast quit and navigate immediately
+      const playerObj = lobbyRef?.state?.players?.get(selfName);
+      const displayName = playerObj?.name?.trim() || selfName;
+      console.log('[pause] Quit clicked, broadcasting quit event...');
+      if (sendPause && typeof sendPause === 'function') {
+        sendPause({ type: 'quit', peerId: selfName, displayName });
+      }
+      applyPauseNetworkEvent({ type: 'quit', peerId: selfName, displayName });
+      setTimeout(() => {
+        window.location.href = window.location.origin;
+      }, 100);
+    });
   }
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') triggerPauseAction(!isPaused, isPaused ? 'resume' : 'pause');
@@ -111,6 +125,14 @@ function applyPauseNetworkEvent({ type, peerId, displayName }) {
     lastUnpausedTime = performance.now();
     if (pauseWhoLabel) pauseWhoLabel.textContent = '';
     if (pauseStatusLabel) pauseStatusLabel.textContent = `${nameToShow} quit the game.`;
+    // Show quit notification during gameplay
+    if (gameplayNotification) {
+      gameplayNotification.textContent = `${nameToShow} quit the game.`;
+      gameplayNotification.style.opacity = '1';
+      setTimeout(() => {
+        if (gameplayNotification) gameplayNotification.style.opacity = '0';
+      }, 7000);
+    }
   }
 }
 
