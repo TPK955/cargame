@@ -12,6 +12,7 @@ let pauseWhoLabel = null;
 let gameplayNotification = null;
 let sendPause = null;
 let selfName = '';
+let matchStarted = false; // Track if match has actually begun
 
 
 // Setup networking for pause actions. All peers (host or not) process all pause actions.
@@ -64,6 +65,16 @@ export function initPauseMenu() {
   });
 }
 
+export function updateResumeButtonText(isPreMatch) {
+  if (resumeBtn) {
+    resumeBtn.textContent = isPreMatch ? 'Start' : 'Resume';
+  }
+}
+
+export function setMatchStarted(started) {
+  matchStarted = started;
+}
+
 import { gameState } from '../main.js';
 
 function triggerPauseAction(paused, action = 'pause') {
@@ -112,13 +123,20 @@ function applyPauseNetworkEvent({ type, peerId, displayName }) {
   if (type === 'pause') {
     isPaused = true;
     if (pauseMenu) pauseMenu.style.display = 'flex';
-    if (pauseWhoLabel) pauseWhoLabel.textContent = `${nameToShow} paused the game.`;
+    const isPreMatch = !matchStarted;
+    updateResumeButtonText(isPreMatch);
+    // Show player name only if match has started
+    if (pauseWhoLabel) pauseWhoLabel.textContent = isPreMatch ? 'Match paused before start.' : `${nameToShow} paused the game.`;
   } else if (type === 'resume') {
     isPaused = false;
     if (pauseMenu) pauseMenu.style.display = 'none';
     lastUnpausedTime = performance.now();
     if (pauseWhoLabel) pauseWhoLabel.textContent = '';
-    if (pauseStatusLabel) pauseStatusLabel.textContent = `${nameToShow} resumed the game.`;
+    if (pauseStatusLabel) pauseStatusLabel.textContent = matchStarted ? `${nameToShow} resumed the game.` : '';
+    if (!matchStarted) {
+      matchStarted = true;
+      updateResumeButtonText(false);
+    }
   } else if (type === 'quit') {
     isPaused = false;
     if (pauseMenu) pauseMenu.style.display = 'none';
