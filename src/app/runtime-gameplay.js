@@ -233,8 +233,9 @@ function applyLifeTick(context) {
       if (!playerLives[peerId].isAlive()) {
         playDespawnSound();
         if (typeof showGameplayNotification === 'function') {
-        showGameplayNotification('You died', 10000);
-      }
+          const playerName = context.session.lobby?.state?.players?.get(peerId)?.name ?? shortId(peerId);
+          showGameplayNotification(`${playerName} died`, 10000);
+        }
         if (player.group.parentNode) {
           world.remove(player.group);
         }
@@ -272,6 +273,12 @@ export function maybeFinishMatch(context) {
     },
     getDisplayName: (id) => context.session.lobby?.state?.players?.get(id)?.name?.trim() || shortId(id),
   });
+
+  const winner = context.gameState.endgameResults?.[0];
+
+  if (winner && typeof showGameplayNotification === 'function') {
+    showGameplayNotification(`${winner.name} won the match!`, 10000);
+  }
 
   context.gameState.phase = 'endgame';
   if (context.session.lobby) {
@@ -495,7 +502,13 @@ export function applySnapshot(context, playerStates) {
             : 0;
         }
 
+        const wasAlive = context.playerLives[context.selfId]?.isAlive?.() ?? true;
         applyLifeSnapshotForPlayer(context.playerLives, context.constants.INITIAL_LIFE, playerState.id, playerState);
+        const nowAlive = context.playerLives[context.selfId]?.isAlive?.() ?? true;
+        if (wasAlive && !nowAlive && typeof showGameplayNotification === 'function') {
+          showGameplayNotification('You died', 10000);
+        }
+
         context.localPlayer.pendingBombDrop = null;
         context.localPlayer.hasSnapshot = true;
         context.localPlayer.lastSeenAt = now;

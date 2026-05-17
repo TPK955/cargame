@@ -253,11 +253,11 @@ export function setupRoom(context) {
     const canStart = activeCount >= 2 && activeCount <= 4 && readyCount >= 2;
     if (callbacks.isHost()) {
       btn.disabled = !canStart;
-      btn.textContent = canStart ? 'Play Game' : `Play Game (${readyCount}/${Math.max(2, activeCount)})`;
+      btn.textContent = canStart ? 'Play Game' : `Play Game`;
     } else {
       // Clients see a disabled, transparent Play button
       btn.disabled = true;
-      btn.textContent = `Play Game (host)`;
+      btn.textContent = `Play Game`;
     }
 
     // Also update ready button appearance for local player
