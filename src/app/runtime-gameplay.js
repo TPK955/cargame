@@ -254,12 +254,12 @@ function applyLifeTick(context) {
 
 export function maybeFinishMatch(context) {
   if (!context.callbacks.isHost() || context.gameState.phase !== 'playing') {
-    return;
+    return false;
   }
 
   const activeParticipantIds = context.callbacks.getActiveParticipantIds();
   if (!shouldEndMatch(context.playerLives, activeParticipantIds)) {
-    return;
+    return false;
   }
 
   context.gameState.endgameResults = buildEndgameResults({
@@ -286,6 +286,7 @@ export function maybeFinishMatch(context) {
   }
 
   context.callbacks.sendSnapshotPacket();
+  return true;
 }
 
 export function updateLocalPlayerAbilityInput(context, player, input, now) {
@@ -453,6 +454,7 @@ export function simulateAuthoritativeStep(context, delta) {
 
 export function applySnapshot(context, playerStates) {
   const now = performance.now();
+  const previousPhase = context.gameState.phase;
 
   let playerList = playerStates;
   let powerupList;

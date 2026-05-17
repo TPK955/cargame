@@ -3,7 +3,7 @@ import { serializePlayerAbilities } from '../game/abilities';
 import { INPUT_SEND_INTERVAL_MS, MAX_PLAYERS } from '../game/config';
 import { normalizeInput, readCurrentInputState, serializeInput } from '../game/input';
 import { getActiveMap, getMapSpawn, mapCellToWorld } from '../game/map-data';
-import { setupPauseNetworking, setPaused, setLastUnpausedTime } from '../game/pause.js';
+import { setupPauseNetworking, setPaused, setLastUnpausedTime, showGameplayNotification } from '../game/pause.js';
 import { serializeHeldAbilities } from '../game/powerups/effects';
 import { shortId } from '../game/utils';
 import { createLobbyController } from '../lobby/lobby-controller';
@@ -169,7 +169,13 @@ export function setupRoom(context) {
     updatePlayButtonState(context);
 
     if (callbacks.isHost()) {
-      sendSnapshotPacket(context);
+      let ended = false;
+      if (context.gameState.phase === 'playing') {
+        ended = maybeFinishMatch(context);
+      }
+      if (!ended) {
+        sendSnapshotPacket(context);
+      }
     }
   });
 
@@ -191,6 +197,7 @@ export function setupRoom(context) {
       return;
     }
 
+    const previousPhase = gameState.phase;
     if (payload.phase) {
       session.lobby.state.phase = payload.phase;
       gameState.phase = payload.phase;
@@ -198,6 +205,16 @@ export function setupRoom(context) {
 
     if ('endgameResults' in payload) {
       gameState.endgameResults = payload.endgameResults ?? null;
+    }
+
+    if (
+      payload.phase === 'endgame' &&
+      previousPhase !== 'endgame' &&
+      payload.endgameResults?.winnerId === selfId &&
+      !callbacks.isHost() &&
+      typeof showGameplayNotification === 'function'
+    ) {
+      showGameplayNotification('You win', 10000);
     }
 
     participantIds.add(peerId);
