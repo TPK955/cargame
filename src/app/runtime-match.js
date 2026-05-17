@@ -64,6 +64,7 @@ export function resetMatch(context) {
   timers.matchTime = 0;
   gameState.endgameResults = null;
   setLastUnpausedTime(performance.now());
+  context.endgameNotificationShown = false;
 
   resetPlayerForMatch(context, localPlayer, selfId);
   for (const [peerId, player] of remotePlayers.entries()) {

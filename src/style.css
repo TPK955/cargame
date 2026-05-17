@@ -176,6 +176,15 @@
   background: rgba(255,255,255,0.12);
 }
 
+.scoreboard-entry--dead {
+  opacity: 0.45;
+  color: rgba(255,255,255,0.5);
+}
+
+.scoreboard-entry--dead .scoreboard-name::after {
+  content: ' ☠';
+}
+
 #score-display .scoreboard-name {
   overflow: hidden;
   text-overflow: ellipsis;

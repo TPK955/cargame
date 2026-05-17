@@ -366,6 +366,7 @@ export function sendSnapshotPacket(context, targetPeers) {
       score: player.score ?? 0,
       totalScore: player.totalScore ?? 0,
       alive: playerLives[player.id]?.isAlive?.() ?? true,
+      isDead: !playerLives[player.id]?.isAlive?.(),
       life: getPlayerLifeValue(playerLives, player.id, constants.INITIAL_LIFE),
       maxLife: playerLives[player.id]?.maxLife ?? constants.INITIAL_LIFE,
       abilities: serializePlayerAbilities(player),

@@ -10,6 +10,7 @@ import { Vec2 } from '../game/math';
 import { createWorld } from '../game/scene';
 import { initPauseMenu } from '../game/pause.js';
 import { ensureHpBarFill, ensureScoreDisplay, updateScoreDisplay as renderScoreboardDisplay } from './runtime-hud.js';
+import { shortId } from '../game/utils.js';
 
 export const playHud = document.getElementById('play-hud');
 export const editorHud = document.getElementById('editor-hud');
