@@ -183,9 +183,20 @@
   max-width: 140px;
 }
 
-#score-display .scoreboard-score {
+#score-display .scoreboard-points {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   font-weight: 700;
-  margin-left: 1rem;
+}
+
+#score-display .scoreboard-added {
+  color: #7cfc00;
+}
+
+#score-display .scoreboard-total {
+  min-width: 2.4rem;
+  text-align: right;
 }
 /* HP Bar Styles */
 #hp-bar-container {

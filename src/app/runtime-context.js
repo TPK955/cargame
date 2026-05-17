@@ -112,17 +112,24 @@ function getPlayerDisplayName(playerId) {
 }
 
 export function updateScoreDisplay() {
+  const showEndgameAdded = gameState.phase === 'endgame';
   const entries = [
     ...Array.from(remotePlayers.values()).map((player) => ({
       id: player.id,
       name: getPlayerDisplayName(player.id),
-      score: Number(player.totalScore ?? player.score ?? 0),
+      score: showEndgameAdded
+        ? Number(player.totalScore ?? 0)
+        : Number((player.totalScore ?? 0) + (player.score ?? 0)),
+      added: showEndgameAdded ? Number(player.score ?? 0) : 0,
       isLocal: false,
     })),
     {
       id: selfId,
       name: getPlayerDisplayName(selfId),
-      score: Number(localPlayer.totalScore ?? localPlayer.score ?? 0),
+      score: showEndgameAdded
+        ? Number(localPlayer.totalScore ?? 0)
+        : Number((localPlayer.totalScore ?? 0) + (localPlayer.score ?? 0)),
+      added: showEndgameAdded ? Number(localPlayer.score ?? 0) : 0,
       isLocal: true,
     },
   ];

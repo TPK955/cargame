@@ -51,7 +51,10 @@ export function updateScoreDisplay(scoreDisplayEl, entries) {
       ${sortedEntries.map((entry) => `
         <div class="scoreboard-entry${entry.isLocal ? ' scoreboard-entry--self' : ''}">
           <span class="scoreboard-name">${entry.name || 'Unknown'}</span>
-          <span class="scoreboard-score">${Number(entry.score ?? 0)}</span>
+          <span class="scoreboard-points">
+            ${entry.added > 0 ? `<span class="scoreboard-added">+${Number(entry.added)}</span>` : ''}
+            <span class="scoreboard-total">${Number(entry.score ?? 0)}</span>
+          </span>
         </div>
       `).join('')}
     </div>
