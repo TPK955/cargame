@@ -281,16 +281,24 @@ export function maybeFinishMatch(context) {
   }
 
   if (winner && typeof showGameplayNotification === 'function') {
-    showGameplayNotification(`${winner.name} won the match!`, 10000);
+    const isLocalWinner = winner.id === context.selfId;
+    showGameplayNotification(
+      isLocalWinner ? 'You win!' : `${winner.name} won the match!`,
+      10000
+    );
   }
 
-  context.gameState.phase = 'endgame';
-  if (context.session.lobby) {
-    context.session.lobby.state.phase = 'endgame';
-  }
+  setTimeout(() => {
+    context.gameState.phase = 'endgame';
 
-  context.updateScoreDisplay();
-  context.callbacks.sendSnapshotPacket();
+    if (context.session.lobby) {
+      context.session.lobby.state.phase = 'endgame';
+    }
+
+    context.updateScoreDisplay();
+    context.callbacks.sendSnapshotPacket();
+  }, 3000);
+
   return true;
 }
 
