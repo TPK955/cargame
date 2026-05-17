@@ -9,7 +9,7 @@ import { LifeSystem } from '../game/life.js';
 import { Vec2 } from '../game/math';
 import { createWorld } from '../game/scene';
 import { initPauseMenu } from '../game/pause.js';
-import { ensureHpBarFill, ensureScoreDisplay, updateScoreDisplay as renderScoreDisplay } from './runtime-hud.js';
+import { ensureHpBarFill, ensureScoreDisplay, updateScoreDisplay as renderScoreboardDisplay } from './runtime-hud.js';
 
 export const playHud = document.getElementById('play-hud');
 export const editorHud = document.getElementById('editor-hud');
@@ -103,8 +103,28 @@ if (localPlayer.score === undefined) {
   localPlayer.score = 0;
 }
 
+function getPlayerDisplayName(playerId) {
+  const playerName = lobbyRef?.state?.players?.get(playerId)?.name?.trim();
+  return playerName || shortId(playerId);
+}
+
 export function updateScoreDisplay() {
-  renderScoreDisplay(scoreDisplay, localPlayer.score ?? 0);
+  const entries = [
+    ...Array.from(remotePlayers.values()).map((player) => ({
+      id: player.id,
+      name: getPlayerDisplayName(player.id),
+      score: Number(player.score ?? 0),
+      isLocal: false,
+    })),
+    {
+      id: selfId,
+      name: getPlayerDisplayName(selfId),
+      score: Number(localPlayer.score ?? 0),
+      isLocal: true,
+    },
+  ];
+
+  renderScoreboardDisplay(scoreDisplay, entries);
 }
 
 export function ensureRemotePlayerWithLife(peerId, spawnPosition) {

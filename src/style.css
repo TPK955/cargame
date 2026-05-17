@@ -135,14 +135,57 @@
   bottom: 32px;
   background: rgba(34, 34, 34, 0.92);
   color: #fff;
-  font-size: 2.2rem;
-  font-weight: 700;
-  padding: 0.6em 1.4em;
+  font-size: 1rem;
+  font-weight: 400;
+  padding: 1em 1.2em;
   border-radius: 16px;
   box-shadow: 0 2px 12px rgba(0,0,0,0.18);
   z-index: 99999;
   pointer-events: none;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
+  min-width: 180px;
+  max-width: 260px;
+}
+
+#score-display .scoreboard-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.75rem;
+  opacity: 0.85;
+}
+
+#score-display .scoreboard-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+#score-display .scoreboard-entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+  line-height: 1.3;
+  padding: 0.55rem 0.65rem;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.04);
+}
+
+#score-display .scoreboard-entry--self {
+  background: rgba(255,255,255,0.12);
+}
+
+#score-display .scoreboard-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
+}
+
+#score-display .scoreboard-score {
+  font-weight: 700;
+  margin-left: 1rem;
 }
 /* HP Bar Styles */
 #hp-bar-container {

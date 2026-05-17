@@ -31,12 +31,31 @@ export function ensureScoreDisplay() {
   return scoreDisplay;
 }
 
-export function updateScoreDisplay(scoreDisplayEl, score) {
+export function updateScoreDisplay(scoreDisplayEl, entries) {
   if (!scoreDisplayEl) {
     return;
   }
 
-  scoreDisplayEl.textContent = `Score: ${score ?? 0}`;
+  const sortedEntries = Array.isArray(entries)
+    ? [...entries].sort((a, b) => {
+      if ((b.score ?? 0) !== (a.score ?? 0)) {
+        return (b.score ?? 0) - (a.score ?? 0);
+      }
+      return (a.name || '').localeCompare(b.name || '');
+    })
+    : [];
+
+  scoreDisplayEl.innerHTML = `
+    <div class="scoreboard-title">Leaderboard</div>
+    <div class="scoreboard-list">
+      ${sortedEntries.map((entry) => `
+        <div class="scoreboard-entry${entry.isLocal ? ' scoreboard-entry--self' : ''}">
+          <span class="scoreboard-name">${entry.name || 'Unknown'}</span>
+          <span class="scoreboard-score">${Number(entry.score ?? 0)}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
 }
 
 export function updateMatchTimerDisplay(matchTimerDisplay, globalMatchTimer, matchTime) {
