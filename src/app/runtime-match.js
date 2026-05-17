@@ -11,6 +11,9 @@ function resetPlayerForMatch(context, player, playerId) {
     playerLives[playerId].reset(constants.INITIAL_LIFE);
   }
 
+  if (player.totalScore === undefined) {
+    player.totalScore = 0;
+  }
   player.score = 0;
   player.velocity.set(0, 0);
   player.impactVelocity.set(0, 0);

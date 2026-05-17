@@ -102,6 +102,9 @@ const scoreDisplay = ensureScoreDisplay();
 if (localPlayer.score === undefined) {
   localPlayer.score = 0;
 }
+if (localPlayer.totalScore === undefined) {
+  localPlayer.totalScore = 0;
+}
 
 function getPlayerDisplayName(playerId) {
   const playerName = lobbyRef?.state?.players?.get(playerId)?.name?.trim();
@@ -113,13 +116,13 @@ export function updateScoreDisplay() {
     ...Array.from(remotePlayers.values()).map((player) => ({
       id: player.id,
       name: getPlayerDisplayName(player.id),
-      score: Number(player.score ?? 0),
+      score: Number(player.totalScore ?? player.score ?? 0),
       isLocal: false,
     })),
     {
       id: selfId,
       name: getPlayerDisplayName(selfId),
-      score: Number(localPlayer.score ?? 0),
+      score: Number(localPlayer.totalScore ?? localPlayer.score ?? 0),
       isLocal: true,
     },
   ];
@@ -134,6 +137,9 @@ export function ensureRemotePlayerWithLife(peerId, spawnPosition) {
     remotePlayers.set(peerId, player);
     if (!playerLives[peerId]) {
       playerLives[peerId] = new LifeSystem(runtimeConstants.INITIAL_LIFE);
+    }
+    if (player.totalScore === undefined) {
+      player.totalScore = 0;
     }
   }
 

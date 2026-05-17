@@ -364,6 +364,7 @@ export function sendSnapshotPacket(context, targetPeers) {
       vz: player.velocity.y,
       ready: session.lobby?.state.players.get(player.id)?.ready ?? false,
       score: player.score ?? 0,
+      totalScore: player.totalScore ?? 0,
       alive: playerLives[player.id]?.isAlive?.() ?? true,
       life: getPlayerLifeValue(playerLives, player.id, constants.INITIAL_LIFE),
       maxLife: playerLives[player.id]?.maxLife ?? constants.INITIAL_LIFE,

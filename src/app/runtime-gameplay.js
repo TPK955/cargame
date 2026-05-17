@@ -276,6 +276,10 @@ export function maybeFinishMatch(context) {
 
   const winner = context.gameState.endgameResults?.[0];
 
+  for (const player of getAllPlayers(context)) {
+    player.totalScore = Number(player.totalScore ?? 0) + Number(player.score ?? 0);
+  }
+
   if (winner && typeof showGameplayNotification === 'function') {
     showGameplayNotification(`${winner.name} won the match!`, 10000);
   }
@@ -285,6 +289,7 @@ export function maybeFinishMatch(context) {
     context.session.lobby.state.phase = 'endgame';
   }
 
+  context.updateScoreDisplay();
   context.callbacks.sendSnapshotPacket();
   return true;
 }
@@ -475,6 +480,7 @@ export function applySnapshot(context, playerStates) {
         context.localPlayer.targetVelocity.set(playerState.vx, playerState.vz);
         context.localPlayer.targetHeading = playerState.heading;
         context.localPlayer.score = Number(playerState.score ?? context.localPlayer.score ?? 0);
+        context.localPlayer.totalScore = Number(playerState.totalScore ?? context.localPlayer.totalScore ?? 0);
         applyPlayerAbilitiesSnapshot(context.localPlayer, playerState.abilities);
         applyHeldAbilitiesSnapshot(context.localPlayer, playerState.heldAbilities);
 
@@ -542,6 +548,7 @@ export function applySnapshot(context, playerStates) {
     player.targetVelocity.set(playerState.vx, playerState.vz);
     player.targetHeading = playerState.heading;
     player.score = Number(playerState.score ?? player.score ?? 0);
+    player.totalScore = Number(playerState.totalScore ?? player.totalScore ?? 0);
     applyPlayerAbilitiesSnapshot(player, playerState.abilities);
     applyHeldAbilitiesSnapshot(player, playerState.heldAbilities);
 
