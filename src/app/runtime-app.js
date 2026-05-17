@@ -202,6 +202,9 @@ if (readyButton) {
       return;
     }
 
+    // Immediately disable Ready locally for feedback; lobby state will be broadcast
+    readyButton.disabled = true;
+    readyButton.classList.add('disabled');
     sessionState.lobby.handleLocalReady(true);
   });
 }

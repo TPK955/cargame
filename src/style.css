@@ -43,6 +43,8 @@
   justify-content: center;
 }
 .pause-menu__content {
+  display: flex;
+  flex-direction: column;
   background: #23243a;
   border-radius: 18px;
   padding: 2.5em 3em 2em 3em;
@@ -112,6 +114,20 @@
 .pause-menu__resume:hover {
   background: #b71c1c;
 }
+
+.pause-menu__quit {
+  margin-top: 0.8em;
+  font-size: 1.1rem;
+  padding: 0.6em 1.8em;
+  border-radius: 10px;
+  background: #555;
+  color: #fff;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+} 
+
 /* Score Display Styles */
 #score-display {
   position: fixed;
@@ -119,14 +135,77 @@
   bottom: 32px;
   background: rgba(34, 34, 34, 0.92);
   color: #fff;
-  font-size: 2.2rem;
-  font-weight: 700;
-  padding: 0.6em 1.4em;
+  font-size: 1rem;
+  font-weight: 400;
+  padding: 1em 1.2em;
   border-radius: 16px;
   box-shadow: 0 2px 12px rgba(0,0,0,0.18);
   z-index: 99999;
   pointer-events: none;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
+  min-width: 180px;
+  max-width: 260px;
+}
+
+#score-display .scoreboard-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.75rem;
+  opacity: 0.85;
+}
+
+#score-display .scoreboard-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+#score-display .scoreboard-entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+  line-height: 1.3;
+  padding: 0.55rem 0.65rem;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.04);
+}
+
+#score-display .scoreboard-entry--self {
+  background: rgba(255,255,255,0.12);
+}
+
+.scoreboard-entry--dead {
+  opacity: 0.45;
+  color: rgba(255,255,255,0.5);
+}
+
+.scoreboard-entry--dead .scoreboard-name::after {
+  content: ' ☠';
+}
+
+#score-display .scoreboard-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
+}
+
+#score-display .scoreboard-points {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 700;
+}
+
+#score-display .scoreboard-added {
+  color: #7cfc00;
+}
+
+#score-display .scoreboard-total {
+  min-width: 2.4rem;
+  text-align: right;
 }
 /* HP Bar Styles */
 #hp-bar-container {
@@ -988,6 +1067,31 @@ h1 {
 
 #toggle-play {
   background: linear-gradient(135deg, #149367, #167d56);
+}
+
+/* Disabled/transparent variant for play button and ready button */
+#toggle-play:disabled,
+#toggle-play.disabled {
+  opacity: 0.38;
+  pointer-events: none;
+  filter: grayscale(40%);
+}
+
+/* Ready button styling (orange) */
+#ready-btn {
+  background: linear-gradient(135deg, #ff8a00, #ff6a00);
+  color: #fff;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.6rem 0.9rem;
+  margin-right: 0.2rem;
+  border: none;
+}
+
+#ready-btn:disabled,
+#ready-btn.disabled {
+  opacity: 0.38;
+  pointer-events: none;
 }
 
 .editor-toolbar {

@@ -1,5 +1,6 @@
 import { show, hide } from '../dom.js';
 import { playFanfareSound } from '../../game/audio/sound-manager';
+import { showGameplayNotification } from '../../game/pause.js';
 
 let lastEndgameSignature = '';
 
@@ -61,6 +62,7 @@ export function renderEndgameUI(gameState, context) {
   if (winnerId && context?.selfId && winnerId === context.selfId) {
     try {
       playFanfareSound();
+      showGameplayNotification('You won the match!', 20000);
     } catch (e) {
       // swallow audio errors
       console.warn('Fanfare playback failed', e);

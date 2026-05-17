@@ -46,7 +46,7 @@ import { renderUI } from '../ui/state-renderer.js';
 import { updateHeldAbilitySlots as renderHeldAbilitySlots } from './runtime-ability-ui.js';
 import { updateHpBar as updateHpBarDisplay } from './runtime-hud.js';
 import { applyLifeSnapshotForPlayer, getHealthPercent as getPlayerHealthPercent } from './runtime-life.js';
-import { getPaused, getLastUnpausedTime, setLastUnpausedTime } from '../game/pause.js';
+import { getPaused, getLastUnpausedTime, setLastUnpausedTime, showGameplayNotification } from '../game/pause.js';
 
 export function handleResize(context) {
   context.world.setSize(window.innerWidth, window.innerHeight);
@@ -215,6 +215,9 @@ function applyLifeTick(context) {
       if (localPlayer.group.parentNode) {
         world.remove(localPlayer.group);
       }
+      if (typeof showGameplayNotification === 'function') {
+        showGameplayNotification('You died', 10000);
+      }
       for (const [peerId, remoteLife] of Object.entries(playerLives)) {
         if (peerId !== selfId && remoteLife.isAlive() && remotePlayers.has(peerId) && remotePlayers.get(peerId).score !== undefined) {
           remotePlayers.get(peerId).score += 1;
@@ -229,6 +232,10 @@ function applyLifeTick(context) {
       playDamageSound();
       if (!playerLives[peerId].isAlive()) {
         playDespawnSound();
+        if (typeof showGameplayNotification === 'function') {
+          const playerName = context.session.lobby?.state?.players?.get(peerId)?.name ?? shortId(peerId);
+          showGameplayNotification(`${playerName} died`, 10000);
+        }
         if (player.group.parentNode) {
           world.remove(player.group);
         }
@@ -247,12 +254,12 @@ function applyLifeTick(context) {
 
 export function maybeFinishMatch(context) {
   if (!context.callbacks.isHost() || context.gameState.phase !== 'playing') {
-    return;
+    return false;
   }
 
   const activeParticipantIds = context.callbacks.getActiveParticipantIds();
   if (!shouldEndMatch(context.playerLives, activeParticipantIds)) {
-    return;
+    return false;
   }
 
   context.gameState.endgameResults = buildEndgameResults({
@@ -267,12 +274,20 @@ export function maybeFinishMatch(context) {
     getDisplayName: (id) => context.session.lobby?.state?.players?.get(id)?.name?.trim() || shortId(id),
   });
 
+  const winner = context.gameState.endgameResults?.[0];
+
+  for (const player of getAllPlayers(context)) {
+    player.totalScore = Number(player.totalScore ?? 0) + Number(player.score ?? 0);
+  }
+
   context.gameState.phase = 'endgame';
   if (context.session.lobby) {
     context.session.lobby.state.phase = 'endgame';
   }
 
+  context.updateScoreDisplay();
   context.callbacks.sendSnapshotPacket();
+  return true;
 }
 
 export function updateLocalPlayerAbilityInput(context, player, input, now) {
@@ -440,6 +455,7 @@ export function simulateAuthoritativeStep(context, delta) {
 
 export function applySnapshot(context, playerStates) {
   const now = performance.now();
+  const previousPhase = context.gameState.phase;
 
   let playerList = playerStates;
   let powerupList;
@@ -460,6 +476,7 @@ export function applySnapshot(context, playerStates) {
         context.localPlayer.targetVelocity.set(playerState.vx, playerState.vz);
         context.localPlayer.targetHeading = playerState.heading;
         context.localPlayer.score = Number(playerState.score ?? context.localPlayer.score ?? 0);
+        context.localPlayer.totalScore = Number(playerState.totalScore ?? context.localPlayer.totalScore ?? 0);
         applyPlayerAbilitiesSnapshot(context.localPlayer, playerState.abilities);
         applyHeldAbilitiesSnapshot(context.localPlayer, playerState.heldAbilities);
 
@@ -489,7 +506,13 @@ export function applySnapshot(context, playerStates) {
             : 0;
         }
 
+        const wasAlive = context.playerLives[context.selfId]?.isAlive?.() ?? true;
         applyLifeSnapshotForPlayer(context.playerLives, context.constants.INITIAL_LIFE, playerState.id, playerState);
+        const nowAlive = context.playerLives[context.selfId]?.isAlive?.() ?? true;
+        if (wasAlive && !nowAlive && typeof showGameplayNotification === 'function') {
+          showGameplayNotification('You died', 10000);
+        }
+
         context.localPlayer.pendingBombDrop = null;
         context.localPlayer.hasSnapshot = true;
         context.localPlayer.lastSeenAt = now;
@@ -521,6 +544,7 @@ export function applySnapshot(context, playerStates) {
     player.targetVelocity.set(playerState.vx, playerState.vz);
     player.targetHeading = playerState.heading;
     player.score = Number(playerState.score ?? player.score ?? 0);
+    player.totalScore = Number(playerState.totalScore ?? player.totalScore ?? 0);
     applyPlayerAbilitiesSnapshot(player, playerState.abilities);
     applyHeldAbilitiesSnapshot(player, playerState.heldAbilities);
 
@@ -540,7 +564,14 @@ export function applySnapshot(context, playerStates) {
         : 0;
     }
 
+    const wasAlive = context.playerLives[playerState.id]?.isAlive?.() ?? true;
     applyLifeSnapshotForPlayer(context.playerLives, context.constants.INITIAL_LIFE, playerState.id, playerState);
+    const nowAlive = context.playerLives[playerState.id]?.isAlive?.() ?? true;
+    if (wasAlive && !nowAlive) {
+      const playerName = context.session.lobby?.state?.players?.get(playerState.id)?.name ?? shortId(playerState.id);
+      showGameplayNotification(`${playerName} died`, 10000);
+    }
+
     player.pendingBombDrop = null;
     player.lastSeenAt = now;
 
@@ -562,6 +593,28 @@ export function applySnapshot(context, playerStates) {
       context.world.remove(player.group);
     }
   }
+
+  if (
+    previousPhase !== 'endgame'
+    && !context.endgameNotificationShown
+  ) {
+
+    context.endgameNotificationShown = true;
+
+    const winner = context.gameState.endgameResults?.[0];
+
+    if (winner && typeof showGameplayNotification === 'function') {
+      const isLocalWinner = winner.id === context.selfId;
+
+      showGameplayNotification(
+        isLocalWinner
+          ? 'You win!'
+          : `${winner.name} won the match!`,
+        10000
+      );
+    }
+  }
+
 }
 
 export function applyPickupEffect(context, type, player) {

@@ -11,7 +11,7 @@ export function shouldEndMatch(playerLives, participantIds) {
     ? participantIds
     : Array.from(participantIds ?? []);
 
-  if (activeIds.length < 2) {
+  if (activeIds.length === 0) {
     return false;
   }
 
