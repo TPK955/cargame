@@ -434,6 +434,10 @@ export function refreshHostRole(context, forcedHostId) {
     dom.statusLabel.textContent = `Authoritative host: ${shortId(session.hostId)}`;
     updatePauseHostLabel(context);
   }
+
+  if (dom.newMatchBtn) {
+    dom.newMatchBtn.style.display = callbacks.isHost() ? 'block' : 'none';
+  }
 }
 
 export function isHost(context) {
