@@ -46,7 +46,7 @@ import { renderUI } from '../ui/state-renderer.js';
 import { updateHeldAbilitySlots as renderHeldAbilitySlots } from './runtime-ability-ui.js';
 import { updateHpBar as updateHpBarDisplay } from './runtime-hud.js';
 import { applyLifeSnapshotForPlayer, getHealthPercent as getPlayerHealthPercent } from './runtime-life.js';
-import { getPaused, getLastUnpausedTime, setLastUnpausedTime, showGameplayNotification } from '../game/pause.js';
+import { getPaused, getLastUnpausedTime, setLastUnpausedTime, showGameplayNotification, startCountdown, isCountdownActive } from '../game/pause.js';
 
 export function handleResize(context) {
   context.world.setSize(window.innerWidth, window.innerHeight);
@@ -92,8 +92,14 @@ export function loop(context) {
 
     if (context.gameState.phase !== 'playing') {
       stopAllVehicleSounds();
-
       context.updateScoreDisplay();
+      context.world.render();
+      requestAnimationFrame(context.callbacks.loop);
+      return;
+    }
+
+    // Block gameplay during countdown
+    if (isCountdownActive()) {
       context.world.render();
       requestAnimationFrame(context.callbacks.loop);
       return;
@@ -333,7 +339,7 @@ export function applyAuthoritativeMap(context, nextMap) {
   context.world.setMap(appliedMap);
   context.callbacks.syncActiveRoster();
 
-  if (!context.callbacks.isHost()) {
+  if (!context.callbacks.isHost() && !context.localPlayer.hasSnapshot) {
     const localSpawn = context.callbacks.getSpawnPoint(context.selfId);
     context.localPlayer.position.set(localSpawn.x, localSpawn.y);
     context.localPlayer.previousPosition.copy(context.localPlayer.position);

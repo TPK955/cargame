@@ -1,5 +1,40 @@
+// Countdown state
+let countdownActive = false;
+let countdownTimeout = null;
+
+/**
+ * Shows a 3-second countdown overlay and blocks gameplay until done.
+ * Calls the provided callback when countdown completes.
+ */
+export function startCountdown(callback) {
+  if (countdownActive) return;
+  countdownActive = true;
+  let seconds = 3;
+  if (gameplayNotification) {
+    gameplayNotification.style.opacity = '1';
+    gameplayNotification.textContent = `Starting in ${seconds}`;
+  }
+  function tick() {
+    seconds--;
+    if (seconds > 0) {
+      if (gameplayNotification) gameplayNotification.textContent = `Starting in ${seconds}`;
+      countdownTimeout = setTimeout(tick, 1000);
+    } else {
+      if (gameplayNotification) gameplayNotification.style.opacity = '0';
+      countdownActive = false;
+      if (typeof callback === 'function') callback();
+    }
+  }
+  countdownTimeout = setTimeout(tick, 1000);
+}
+
+export function isCountdownActive() {
+  return countdownActive;
+}
+
 // Import lobbyRef to access player names
 import { lobbyRef, setLobbyRef } from '../main.js';
+import { gameState } from '../main.js';
 // --- Multiplayer Pause Networking Setup ---
 // Call this from main.js: setupPauseNetworking(room, localPlayer)
 let isPaused = false;
@@ -50,6 +85,11 @@ export function initPauseMenu() {
   }
   if (gameplayNotification) {
     gameplayNotification.style.opacity = '0';
+  }
+  
+  const newMatchBtn = document.getElementById('new-match-btn');
+  if (newMatchBtn) {
+    newMatchBtn.style.display = 'none';
   }
   
   if (resumeBtn) {
@@ -107,9 +147,6 @@ export function showGameplayNotification(message, duration = 3000) {
     gameplayNotificationTimeout = null;
   }, duration);
 }
-
-import { gameState } from '../main.js';
-
 function triggerPauseAction(paused, action = 'pause') {
   // Only allow pausing in 'playing' phase
   if (!gameState || (gameState.phase !== 'playing') && (!matchStarted)) {
@@ -170,6 +207,7 @@ function applyPauseNetworkEvent({ type, peerId, displayName }) {
       matchStarted = true;
       updatePauseMenuButtons(false);
     }
+    startCountdown();
   } else if (type === 'quit') {
     isPaused = false;
     if (pauseMenu) pauseMenu.style.display = 'none';

@@ -1,3 +1,6 @@
+export function isHost() {
+  return sessionState.hostId === selfId;
+}
 import '../style.css';
 import '../scene-actor-layer.css';
 import { selfId } from '@trystero-p2p/nostr';

@@ -1,6 +1,6 @@
 import { resetPlayerAbilities } from '../game/abilities';
 import { getActiveMapSlot, getMapSlot } from '../game/map-data';
-import { setLastUnpausedTime } from '../game/pause.js';
+import { setLastUnpausedTime, startCountdown } from '../game/pause.js';
 import { resetHeldAbilities } from '../game/powerups/effects';
 import { updateMatchTimerDisplay as renderMatchTimerDisplay } from './runtime-hud.js';
 
@@ -39,19 +39,20 @@ function resetPlayerForMatch(context, player, playerId) {
   if (!player.group.parentNode) {
     world.add(player.group);
   }
+
 }
 
 export function resetMatch(context) {
   const { callbacks, gameState, localPlayer, remotePlayers, runtimePowerups, selfId, session, timers } = context;
 
-  if (callbacks.isHost()) {
-    runtimePowerups.hostResetPowerups();
-  }
-
   if (!callbacks.isHost()) {
     return;
   }
 
+  runtimePowerups.hostResetPowerups();
+
+  // Start countdown for all players before match begins
+  // startCountdown(() => {
   gameState.phase = 'playing';
   if (session.lobby) {
     session.lobby.state.phase = 'playing';
@@ -84,7 +85,29 @@ export function resetMatch(context) {
       });
     }
   }
-}
+  // });
+    context.endgameNotificationShown = false;
+
+    resetPlayerForMatch(context, localPlayer, selfId);
+    for (const [peerId, player] of remotePlayers.entries()) {
+      resetPlayerForMatch(context, player, peerId);
+    }
+
+    callbacks.updateHpBar();
+    context.updateScoreDisplay();
+    callbacks.updateMatchTimerDisplay();
+
+
+    if (session.lobby) {
+      for (const id of callbacks.getActiveParticipantIds()) {
+        const player = session.lobby.state.players.get(id);
+        session.lobby.state.players.set(id, {
+          name: player?.name ?? '',
+          ready: false,
+        });
+      }
+    }
+  }
 
 export function updateMatchTimerDisplay(context) {
   renderMatchTimerDisplay(context.dom.matchTimerDisplay, context.dom.globalMatchTimer, context.timers.matchTime);
