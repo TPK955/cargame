@@ -1,5 +1,0 @@
-[build]
-command = "rm -rf node_modules/.vite dist && npm install --include=dev && npm run build"
-
-[deploy]
-startCommand = "npm run preview"
