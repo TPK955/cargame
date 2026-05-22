@@ -136,23 +136,28 @@ export function setMatchStarted(started) {
   matchStarted = started;
 }
 
-export function showGameplayNotification(message, duration = 3000) {
-  if (!gameplayNotification) return;
-  if (gameplayNotificationTimeout) {
-    clearTimeout(gameplayNotificationTimeout);
-    gameplayNotificationTimeout = null;
-  }
+export function showGameplayNotification(message, duration = 5000) {
+  const notificationContainer = document.getElementById('gameplay-notification-container');
 
-  gameplayNotification.textContent = message;
-  gameplayNotification.style.opacity = '1';
+  if (!notificationContainer) return;
 
-  gameplayNotificationTimeout = setTimeout(() => {
-    if (gameplayNotification) {
-      gameplayNotification.style.opacity = '0';
-    }
-    gameplayNotificationTimeout = null;
+  const notification = document.createElement('div');
+
+  notification.className = 'gameplay-notification';
+  notification.textContent = message;
+  notification.style.opacity = '1';
+
+  notificationContainer.appendChild(notification);
+
+  setTimeout(() => {
+    notification.style.opacity = '0';
+
+    setTimeout(() => {
+      notification.remove();
+    }, 300);
   }, duration);
 }
+
 function triggerPauseAction(paused, action = 'pause') {
   // Only allow pausing in 'playing' phase
   if (!gameState || (gameState.phase !== 'playing') && (!matchStarted)) {
