@@ -1,4 +1,5 @@
 import { createMapEditor } from '../game/map-editor';
+import { showGameplayNotification } from '../game/pause';
 
 export function createRuntimeEditor(options) {
   const {
@@ -22,6 +23,7 @@ export function createRuntimeEditor(options) {
 
   let isEditMode = false;
   let mapEditorInstance = null;
+  let previousPhase = 'lobby';
 
   function mapEditorLoop() {
     if (!isEditMode) return;
@@ -66,7 +68,7 @@ export function createRuntimeEditor(options) {
     playButton.style.marginRight = '0.5rem';
     playButton.onclick = () => {
       exitEditMode();
-      gameState.phase = 'playing';
+      gameState.phase = previousPhase;
     };
 
     ui.actions.appendChild(playButton);
@@ -97,9 +99,11 @@ export function createRuntimeEditor(options) {
 
   function enterEditMode() {
     if (!isHost()) {
-      statusLabel.textContent = 'Only the host can use the map editor.';
+      showGameplayNotification('Only the host can use the map editor.', 3000);
       return;
     }
+
+    previousPhase = gameState.phase;
 
     isEditMode = true;
     playHud.style.display = 'none';
@@ -117,11 +121,11 @@ export function createRuntimeEditor(options) {
 
   function exitEditMode() {
     isEditMode = false;
-    playHud.style.display = '';
+    playHud.style.display = 'block';
     editorHud.style.display = 'none';
 
     if (toggleEditButton) {
-      toggleEditButton.style.display = '';
+      toggleEditButton.style.display = 'block';
     }
     if (togglePlayButton) {
       togglePlayButton.style.display = 'none';
@@ -149,8 +153,8 @@ export function createRuntimeEditor(options) {
     if (togglePlayButton) {
       togglePlayButton.addEventListener('click', () => {
         if (isEditMode) {
-          gameState.phase = 'playing';
           exitEditMode();
+          gameState.phase = previousPhase;
         }
       });
     }

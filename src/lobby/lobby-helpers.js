@@ -33,12 +33,14 @@ export function validatePlayerName(name) {
 export function updateNameValidation() {
   const name = playerNameInput.value.trim();
   const validation = validatePlayerName(name);
-  //console.log('Name validation from updateNameValidation:', validation);
   
-  nameFeedback.textContent = validation.message;
-  nameFeedback.className = 'name-feedback ' + (validation.valid ? 'success' : 'error');
-  
-  //readyButton.style.display = validation.valid ? 'inline-block' : 'none';
+  if (validation.valid) {
+    nameFeedback.textContent = '';
+    nameFeedback.className = 'name-feedback';
+  } else {
+    nameFeedback.textContent = validation.message;
+    nameFeedback.className = 'name-feedback error';
+  }
 }
 
 export function initNameUI() {
@@ -77,7 +79,9 @@ export function submitName() {
     return;
   }
 
-  //console.log('Name validation passed:', validation.message);
+  nameFeedback.textContent = '';
+  nameFeedback.className = 'name-feedback';
+
   setLocalPlayerName(name);
   statusLabel.textContent = `Name set: ${name}`;
 }

@@ -123,10 +123,8 @@ export function createLobbyController({
     }
 
     if (payload.type === 'name-rejected') {
-      if (payload.type === 'name-rejected') {
         nameFeedback.textContent = "Name already taken";
         nameFeedback.className = 'name-feedback error';
-      }
     }
 
   }
