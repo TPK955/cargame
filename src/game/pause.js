@@ -13,17 +13,17 @@ export function startCountdown(callback) {
   countdownActive = true;
   let seconds = 3;
   if (gameplayNotification) {
+    playCountdownSound();
     gameplayNotification.style.opacity = '1';
     gameplayNotification.textContent = `Starting in ${seconds}`;
-    playCountdownSound();
+    
   }
   function tick() {
+    playCountdownSound();
     seconds--;
     if (seconds > 0) {
       if (gameplayNotification) gameplayNotification.textContent = `Starting in ${seconds}`;
-      playCountdownSound();
       countdownTimeout = setTimeout(tick, 1000);
-      
     } else {
       if (gameplayNotification) gameplayNotification.style.opacity = '0';
       countdownActive = false;
