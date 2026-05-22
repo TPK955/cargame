@@ -424,16 +424,14 @@ Using a TURN server improves compatibility significantly.
 
 ---
 
-# Public Hosting **WIP**
+# Public Hosting
 
 For cross-network multiplayer, the game must be hosted on a public HTTPS URL.
 
 Typical cross-network multiplayer flow:
 
-1. Build the project
-2. Deploy the `dist` folder
-3. Open the public HTTPS URL
-4. Share the room URL with players
+1. Open the public HTTPS URL
+2. Share the room URL with players
 
 ---
 
