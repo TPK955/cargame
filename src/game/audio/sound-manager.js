@@ -24,6 +24,8 @@ let speedBoostBuffer = null;
 let shieldBuffer = null;
 let ghostBuffer = null;
 let fanfareBuffer = null;
+let countdownBuffer = null;
+let startMatchBuffer = null;
 
 let ghostSource = null;
 let ghostGain = null;
@@ -59,6 +61,8 @@ export async function initAudio() {
   ghostBuffer = await loadSound("/sounds/ghost.wav");
   bombDropBuffer = await loadSound("/sounds/bomb_drop.wav");
   fanfareBuffer = await loadSound("/sounds/fanfare.wav");
+  countdownBuffer = await loadSound("/sounds/countdown_signal.wav");
+  startMatchBuffer = await loadSound("/sounds/countdown_final.wav");
   engineSource = ctx.createBufferSource();
   engineSource.buffer = engineBuffer;
   engineSource.loop = true;
@@ -391,6 +395,42 @@ export function playFanfareSound() {
 
   const gain = ctx.createGain();
   gain.gain.value = 0.8;
+
+  src.connect(gain).connect(ctx.destination);
+
+  src.start(0);
+}
+
+export function playCountdownSound() {
+  if (!initialized || !countdownBuffer) return;
+
+  if (ctx.state === "suspended") {
+    ctx.resume();
+  }
+
+  const src = ctx.createBufferSource();
+  src.buffer = countdownBuffer;
+
+  const gain = ctx.createGain();
+  gain.gain.value = 0.5;
+
+  src.connect(gain).connect(ctx.destination);
+
+  src.start(0);
+}
+
+export function playStartMatchSound() {
+  if (!initialized || !startMatchBuffer) return;
+
+  if (ctx.state === "suspended") {
+    ctx.resume();
+  }
+
+  const src = ctx.createBufferSource();
+  src.buffer = startMatchBuffer;
+
+  const gain = ctx.createGain();
+  gain.gain.value = 0.5;
 
   src.connect(gain).connect(ctx.destination);
 

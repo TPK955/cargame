@@ -1,3 +1,5 @@
+import { playCountdownSound, playStartMatchSound } from './audio/sound-manager.js';
+
 // Countdown state
 let countdownActive = false;
 let countdownTimeout = null;
@@ -13,15 +15,19 @@ export function startCountdown(callback) {
   if (gameplayNotification) {
     gameplayNotification.style.opacity = '1';
     gameplayNotification.textContent = `Starting in ${seconds}`;
+    playCountdownSound();
   }
   function tick() {
     seconds--;
     if (seconds > 0) {
       if (gameplayNotification) gameplayNotification.textContent = `Starting in ${seconds}`;
+      playCountdownSound();
       countdownTimeout = setTimeout(tick, 1000);
+      
     } else {
       if (gameplayNotification) gameplayNotification.style.opacity = '0';
       countdownActive = false;
+      playStartMatchSound();
       if (typeof callback === 'function') callback();
     }
   }
