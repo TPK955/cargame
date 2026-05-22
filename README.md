@@ -1,29 +1,89 @@
 # Bumper Cars P2P
 
-Bumper Cars P2P is a browser-based multiplayer bumper-car arena built with plain JavaScript, Vite, and Trystero over WebRTC. One peer becomes the authoritative host for simulation, while other peers send input and receive synchronized snapshots.
+## Table of Contents
 
-The project currently includes a lobby and ready flow, host-authoritative movement/collision, a built-in map editor, synchronized match state, and an expanding power-up and ability system.
+1. [Overview](#overview)
+2. [Current Features](#current-features)
+3. [Tech Stack](#tech-stack)
+4. [Getting Started](#getting-started)
+5. [Environment Variables](#environment-variables)
+6. [Available Scripts](#available-scripts)
+7. [Multiplayer Flow](#multiplayer-flow)
+8. [Controls](#controls)
+9. [Gameplay Systems](#gameplay-systems)
+10. [Power-Ups](#power-ups)
+11. [Abilities](#abilities)
+12. [Game Objective](#game-objective)
+13. [Match Countdown](#match-countdown)
+14. [Lobby System](#lobby-system)
+15. [Map Editor](#map-editor)
+16. [Networking Notes](#networking-notes)
+17. [Public Hosting](#public-hosting)
+18. [Build](#build)
+19. [Project Structure Notes](#project-structure-notes)
+20. [Current Development Status](#current-development-status)
+
+---
+
+## Overview
+
+Bumper Cars P2P is a browser-based multiplayer bumper-car arena built with plain JavaScript, Vite, and Trystero over WebRTC. One peer becomes the authoritative host for gameplay simulation, while other peers send input packets and receive synchronized snapshots from the host.
+
+The project now includes a synchronized multiplayer lobby system, host-controlled match flow, an in-game map editor, dynamic abilities and power-ups, collision combat, player life systems, pause synchronization, and multiple gameplay HUD states.
 
 ## Current Features
 
-- Host-authoritative P2P multiplayer using Trystero's Nostr strategy and WebRTC.
-- Auto-generated room URLs so another browser or device can join the same session.
-- Lobby flow with player names, ready states, and host-controlled match start.
-- Match timer, HP bar, score display, pause menu, and new match reset.
-- Built-in map editor with saved map slots.
-- Random power-up spawning with host validation and synchronized pickup state.
-- Space speed boost ability with cooldown HUD.
-- Two dynamic held-ability slots bound to `Q` and `E`, with oldest-held replacement when both slots are full.
-- Shield pickup with slot-based inventory, HUD display, and knockback immunity while active.
+* Host-authoritative P2P multiplayer using Trystero's Nostr strategy and WebRTC.
+* Auto-generated room URLs for fast multiplayer session sharing.
+* Lobby system with:
 
-## Tech Stack
+  * player names
+  * name validation
+  * ready states
+  * active player limits
+  * host-controlled game start
+* Authoritative synchronized gameplay state:
 
-- Vite
-- Plain JavaScript modules
-- Trystero (`@trystero-p2p/nostr`)
-- Browser DOM/CSS rendering
+  * movement
+  * collisions
+  * abilities
+  * power-ups
+  * bombs
+  * scores
+  * health/lives
+  * match timer
+* Match countdown with synchronized start sequence and audio.
+* Pause system with synchronized pause state across peers.
+* Built-in map editor available during runtime for the host.
+* Saved map slot support and synchronized map sharing.
+* Dynamic held-ability inventory system with stackable charges.
+* Endgame state with winner detection and victory messaging.
+* Modular UI rendering architecture with separate lobby, gameplay, and endgame views.
+* Audio system with:
 
-## Getting Started
+  * engine sounds
+  * collision sounds
+  * countdown/start sounds
+  * bomb sounds
+  * pickup sounds
+  * damage sounds
+  * shield and ghost ability sounds
+  * despawning sound effect
+  * winning fanfare
+
+---
+
+# Tech Stack
+
+* Vite
+* Plain JavaScript ES Modules
+* Trystero (`@trystero-p2p/nostr`)
+* WebRTC
+* Browser DOM/CSS rendering
+
+---
+
+# Getting Started
 
 Install dependencies:
 
@@ -31,143 +91,376 @@ Install dependencies:
 npm ci
 ```
 
-Start the normal play mode:
+Start the development server:
 
 ```bash
 npm start
 ```
 
-The dev server starts with HTTPS by default so WebRTC and Web Crypto work correctly on `localhost` and LAN devices.
+The project uses HTTPS locally by default so WebRTC and secure browser APIs work correctly.
 
-If you need plain HTTP for local debugging:
+If needed, HTTP mode can still be used for debugging:
 
 ```bash
 npm start -- --http
 ```
 
-## Available Scripts
+---
+
+# Environment Variables
+
+Create a `.env` file in the project root if you want custom relay or TURN configuration.
+
+Example:
 
 ```bash
-npm start      # play mode over Vite with HTTPS enabled by default
-npm run map    # start directly in map editor mode
+# Optional public URL used in invite links
+VITE_PUBLIC_ORIGIN=https://your-game.example.com
+
+# Optional custom Nostr relays
+VITE_NOSTR_RELAYS=wss://relay.damus.io,wss://relay.primal.net,wss://nos.lol
+
+# Optional TURN servers for strict NAT/firewall setups
+VITE_TURN_URLS=turn:turn.example.com:3478?transport=udp,turn:turn.example.com:3478?transport=tcp
+VITE_TURN_USERNAME=username
+VITE_TURN_CREDENTIAL=password
+```
+
+If no relay configuration exists, Trystero falls back to its default relay behavior.
+
+TURN servers are optional but improve reliability on restrictive networks such as:
+
+* school networks
+* enterprise WiFi
+* carrier-grade NAT
+* heavily firewalled connections
+
+## Preferred Networks
+
+Multiplayer may not function correctly on restricted institutional or enterprise networks due to WebRTC/STUN/TURN restrictions. **Mobile hotspot** or **home network** is recommended for testing. See [Networking Notes](#networking-notes) for more info.
+
+---
+
+# Available Scripts
+
+```bash
+npm start      # start Vite dev server with HTTPS
 npm run build  # production build
 npm run preview
 ```
 
-## Multiplayer Flow
+---
+
+# Multiplayer Flow
 
 1. Open the game in a browser.
-2. The game creates a `room` query parameter automatically if one does not already exist.
-3. Share the full URL with another player.
-4. Players enter a unique name and mark themselves ready.
-5. The host starts automatically once all active players are ready and there are at least two active players.
+2. A room ID is automatically generated if one does not already exist.
+3. Share the full room URL with another player.
+4. Players enter unique names.
+5. Players mark themselves as ready.
+6. The host manually starts the match using the Play button.
 
-The host is authoritative for movement, collision, timer progression, power-up spawning, and synchronized match state.
+The host is authoritative for:
 
-## Controls
+* movement
+* collisions
+* life/health
+* power-up validation
+* timer progression
+* endgame logic
+* synchronized snapshots
 
-- `W`, `A`, `S`, `D`: drive and steer
-- `Space`: activate speed boost
-- `Q`: activate the left held ability slot
-- `E`: activate the right held ability slot
-- `Escape`: pause / resume
-- UI buttons: copy invite link, create new room, toggle map edit mode, start/reset match
+---
 
-## Gameplay Systems
+# Controls
 
-### Match State
+## Driving
 
-- HP is shown at the top center.
-- Score is shown at the bottom right.
-- The match timer is synchronized from the host.
-- `New Match` resets timer, lives, score, positions, momentum, abilities, and power-up state for everyone.
+* `W` — accelerate
+* `S` — reverse
+* `A` / `D` — steer
 
-### Power-Ups
+## Abilities
 
-Power-ups spawn randomly on valid floor tiles and are validated by the host on pickup.
+* `Space` — speed boost
+* `Q` — activate left held ability slot
+* `E` — activate right held ability slot
 
-Held power-up behavior:
+## UI / Match
 
-- Pickups go into a two-slot held-ability inventory.
-- If the same pickup is collected again, it stacks charges in its existing slot.
-- If both slots are occupied and a new different pickup is collected, the ability held the longest gets replaced.
-- The two held slots are shown in the HUD on the left and right sides of the speed boost indicator.
+* `Escape` — pause / resume
+* `Shift + R` (host only) — force reset match
+* UI buttons:
 
-Current pickup pool:
+  * Ready
+  * Play Game
+  * Copy Invite Link
+  * New Room
+  * Toggle Map Editor
+  * Reset Match
 
-- `shield`
-- `rocket` inventory placeholder
-- `ghost` inventory placeholder
-- `bomb` inventory placeholder
+---
 
-### Abilities
+# Gameplay Systems
 
-#### Speed Boost
+## Match State
 
-- Activated with `Space`
-- Single press, not hold-to-maintain
-- Ramps up from the player's current speed scale
-- Current config:
-	- max scale: `3x`
-	- ramp-up time: `0.5s`
-	- duration: `2s`
-	- cooldown: `15s`
-- Cooldown is displayed with the lightning icon at the bottom center
+The match system synchronizes:
 
-#### Shield
+* player positions
+* velocities
+* headings
+* health/life
+* scores
+* power-ups
+* bombs
+* active abilities
+* match timer
 
-- Obtained only through random power-up pickup
-- Current pickup gives `1` charge
-- Lives in the dynamic held-ability slots and can be triggered by `Q` or `E` depending on which slot it occupies
-- Current duration is `60s` in config for testing
-- While active:
-	- the shielded player is immune to collision knockback
-	- the unshielded player still gets launched away
-	- the car gets a visible shield barrier effect
-- Shield charges appear in the held-ability HUD, with a badge when a slot holds more than one charge
+The HUD includes:
 
-## Map Editor
+* HP bar
+* score display
+* held abilities
+* boost cooldown
+* pause overlay
+* countdown notifications
 
-Launch map editor mode directly with:
+`New Match` resets:
 
-```bash
-npm run map
+* lives
+* scores
+* positions
+* momentum
+* cooldowns
+* abilities
+* bombs
+* pickups
+* match timer
+
+---
+
+# Power-Ups
+
+Power-ups spawn randomly on valid map tiles and are validated by the authoritative host before pickup synchronization.
+
+## Held Ability Inventory
+
+Players can hold up to two active pickup abilities simultaneously.
+
+Behavior:
+
+* duplicate pickups stack charges
+* different pickups occupy separate slots
+* if both slots are occupied, the oldest held pickup gets replaced
+
+Held abilities appear in the HUD near the boost indicator.
+
+## Current Pickup Pool
+
+* `shield`
+* `ghost`
+* `bomb`
+* `ice bomb`
+
+---
+
+# Abilities
+
+## Speed Boost
+
+Activated with:
+
+```text
+Space
 ```
 
-The project supports session maps and saved map slots. The editor is also available in the in-game UI for the host.
+Features:
 
-## Public Hosting / Cross-Network Play
+* temporary acceleration multiplier
+* cooldown system
+* synchronized activation
+* HUD cooldown display
 
-If players are not on the same machine or LAN, the game page itself must be hosted on a public HTTPS URL.
+Current tuning:
 
-Recommended flow:
+* max speed scale: `3x`
+* ramp-up: `0.5s`
+* duration: `2s`
+* cooldown: `15s`
 
-1. Deploy the built files to a public static host such as Netlify, Cloudflare Pages, or Vercel.
-2. Open the public HTTPS URL.
-3. Share that URL with the room query parameter.
-4. Add a TURN server if you need more reliable connectivity across strict NATs.
+---
 
-Supported environment variables:
+## Shield
 
-```bash
-# Optional canonical URL used by the invite-link UI.
-VITE_PUBLIC_ORIGIN=https://your-game.example.com
+Obtained from power-up pickups.
 
-# Optional TURN configuration for harder network setups.
-VITE_TURN_URLS=turn:turn.your-game.example.com:3478?transport=udp,turn:turn.your-game.example.com:3478?transport=tcp
-VITE_TURN_USERNAME=bumpercars
-VITE_TURN_CREDENTIAL=replace-me
-```
+Features:
 
-Without a TURN server, many peer combinations still work, but some routers and carrier-grade NAT setups will fail.
+* collision knockback immunity
+* visible shield effect
+* stackable charges
+* synchronized state across peers
 
-## Build
+Activated through:
+
+* `Q`
+* `E`
+
+depending on slot position.
+
+---
+
+## Ghost 
+
+Ghost is a temporary mobility ability obtained from power-up pickups.
+
+When activated:
+
+* the player can drive through walls
+* the player can pass through other players
+* collision interactions are temporarily disabled
+* the effect lasts for a short duration before automatically expiring
+
+Features:
+
+* synchronized activation and duration across all peers
+* visible gameplay state replication through host snapshots
+* stored in the held-ability inventory system
+* activated using `Q` or `E` depending on slot position
+
+Ghost is designed as a high-mobility escape and repositioning ability, allowing players to bypass obstacles and crowded collisions for a limited time.
+
+---
+
+## Bombs
+
+Bombs are synchronized through the host and include:
+
+* placement state
+* explosion state
+* synchronized sound playback
+* collision interaction
+
+There are currently two kinds of bombs:
+* Reguler Bomb which destroys floor tiles
+* Ice Bomb which leaves a set of slippery ice tiles after detonation
+
+---
+
+# Game Objective
+
+Crash into other players and push them off the platform to damage and eliminate them while surviving the chaos of the arena. Use movement, timing, map positioning, and power-ups strategically to outlast opponents and become the final surviving bumper car.
+
+---
+
+# Match Countdown
+
+Before a match begins:
+
+* a synchronized countdown appears for all players
+* countdown sounds play each second
+* a start sound triggers when gameplay begins
+
+The countdown timing is host-driven.
+
+---
+
+# Lobby System
+
+The lobby includes:
+
+* synchronized player list
+* ready states
+* unique-name validation
+* active player limits
+* host designation
+* manual match start
+
+Players exceeding the active player limit are treated as inactive spectators until slots become available.
+
+---
+
+# Map Editor
+
+The host can enter map editing mode during runtime.
+
+Features:
+
+* tile editing
+* synchronized session maps
+* saved map slots
+* instant return to lobby flow after editing
+
+The editor runs inside the same runtime session rather than as a separate application.
+
+---
+
+# Networking Notes
+
+The game uses:
+
+* WebRTC data channels for gameplay traffic
+* Nostr relays for peer discovery/signaling
+
+Some networks may block or degrade peer-to-peer connectivity.
+
+Common problematic environments:
+
+* school networks
+* public WiFi
+* enterprise firewalls
+* VPNs
+* strict NAT configurations
+
+Symptoms may include:
+
+* peers failing to join rooms
+* ICE negotiation failure
+* WebSocket relay errors
+* intermittent connectivity
+
+Using a TURN server improves compatibility significantly.
+
+---
+
+# Public Hosting
+
+For cross-network multiplayer, the game must be hosted on a public HTTPS URL.
+
+Typical cross-network multiplayer flow:
+
+1. Open the public HTTPS URL
+2. Share the room URL with players
+
+---
+
+# Build
 
 ```bash
 npm run build
 ```
 
-## Project Notes
+---
 
-- This is currently a rapidly evolving prototype, so gameplay values and README details should be considered implementation-current rather than final design.
-- Some power-up names already exist in the pool before their gameplay effect is implemented.
+# Project Structure Notes
+
+The runtime architecture is now split into modular systems such as:
+
+* runtime-session
+* runtime-gameplay
+* runtime-editor
+* runtime-match
+* runtime-powerups
+* lobby-controller
+* UI view renderers
+
+This separation keeps networking, gameplay, UI rendering, and editor logic isolated and easier to maintain.
+
+---
+
+# Current Development Status
+
+This project is still an actively evolving prototype.
+
+Gameplay balance, networking behavior, abilities, and power-up effects are under active iteration, and some systems are partially implemented placeholders intended for future expansion.
