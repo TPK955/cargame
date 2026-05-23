@@ -197,7 +197,7 @@ export function playCollisionSound(strength = 1) {
   src.start(0);
 }
 
-export function playDamageSound() {
+export function playDamageSound(healthPercent) {
   if (!initialized || !damageBuffer) return;
 
   if (ctx.state === "suspended") {
@@ -207,11 +207,21 @@ export function playDamageSound() {
   const src = ctx.createBufferSource();
   src.buffer = damageBuffer;
 
-  // slightly lower pitch and add variation to avoid repetition
-  //src.playbackRate.value = 0.9 + Math.random() * 0.2;
-
   const gain = ctx.createGain();
-  gain.gain.value = 0.7;
+
+  // Lower health = slower / heavier sound
+  if (healthPercent <= 25) {
+    src.playbackRate.value = 0.60;
+    gain.gain.value = 0.9;
+  } else if (healthPercent <= 50) {
+    src.playbackRate.value = 0.74;
+    gain.gain.value = 0.8;
+  } else if (healthPercent <= 75) {
+    src.playbackRate.value = 0.87;
+    gain.gain.value = 0.7;
+  } else {
+    src.playbackRate.value = 1;
+  }
 
   src.connect(gain).connect(ctx.destination);
   src.start(0);

@@ -215,7 +215,9 @@ function applyLifeTick(context) {
 
   if (playerLives[selfId].isAlive() && !isOnFloorOrWall(localPlayer, collisionMap)) {
     playerLives[selfId].loseLife(constants.LIFE_TICK_DAMAGE);
-    playDamageSound();
+    const healthPercent = getPlayerHealthPercent(playerLives, selfId, constants.INITIAL_LIFE);
+    // console.log(`Applied life tick to local player. Health percent: ${healthPercent}`);
+    playDamageSound(healthPercent);
     if (!playerLives[selfId].isAlive()) {
       playDespawnSound();
       if (localPlayer.group.parentNode) {
@@ -235,7 +237,9 @@ function applyLifeTick(context) {
   for (const [peerId, player] of remotePlayers.entries()) {
     if (playerLives[peerId].isAlive() && !isOnFloorOrWall(player, collisionMap)) {
       playerLives[peerId].loseLife(constants.LIFE_TICK_DAMAGE);
-      playDamageSound();
+      const healthPercent = getPlayerHealthPercent(playerLives, peerId, constants.INITIAL_LIFE);
+      // console.log(`Applied life tick to remote player ${peerId}. Health percent: ${healthPercent}`);
+      playDamageSound(healthPercent);
       if (!playerLives[peerId].isAlive()) {
         playDespawnSound();
         if (typeof showGameplayNotification === 'function') {
