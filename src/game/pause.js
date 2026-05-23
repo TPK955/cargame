@@ -15,19 +15,20 @@ export function startCountdown(callback) {
   if (gameplayNotification) {
     playCountdownSound();
     gameplayNotification.style.opacity = '1';
-    gameplayNotification.textContent = `Starting in ${seconds}`;
+    gameplayNotification.textContent = `Match starting in ${seconds}`;
     
   }
   function tick() {
     playCountdownSound();
     seconds--;
     if (seconds > 0) {
-      if (gameplayNotification) gameplayNotification.textContent = `Starting in ${seconds}`;
+      if (gameplayNotification) gameplayNotification.textContent = `Match starting in ${seconds}`;
       countdownTimeout = setTimeout(tick, 1000);
     } else {
-      if (gameplayNotification) gameplayNotification.style.opacity = '0';
+      if (gameplayNotification) gameplayNotification.style.opacity = '0';''
       countdownActive = false;
       playStartMatchSound();
+      showGameplayNotification('Match started!', 1000);
       if (typeof callback === 'function') callback();
     }
   }
@@ -41,6 +42,7 @@ export function isCountdownActive() {
 // Import lobbyRef to access player names
 import { lobbyRef, setLobbyRef } from '../main.js';
 import { gameState } from '../main.js';
+import { resetMatch } from '../app/runtime-match.js';
 // --- Multiplayer Pause Networking Setup ---
 // Call this from main.js: setupPauseNetworking(room, localPlayer)
 let isPaused = false;
@@ -123,7 +125,7 @@ export function initPauseMenu() {
 
 export function updatePauseMenuButtons(isPreMatch) {
   if (resumeBtn) {
-    resumeBtn.textContent = isPreMatch ? 'Start' : 'Resume';
+   resumeBtn.textContent = isPreMatch ? 'Start' : 'Resume';
   }
 
  if (quitBtn) {
@@ -205,20 +207,33 @@ function applyPauseNetworkEvent({ type, peerId, displayName }) {
     isPaused = true;
     if (pauseMenu) pauseMenu.style.display = 'flex';
     const isPreMatch = !matchStarted;
-    updatePauseMenuButtons(isPreMatch);
+    updatePauseMenuButtons(!isPreMatch);
     // Show player name only if match has started
-    if (pauseWhoLabel) pauseWhoLabel.textContent = isPreMatch ? 'Match paused before start.' : `${nameToShow} paused the game.`;
+    // if (pauseWhoLabel) pauseWhoLabel.textContent = isPreMatch ? 'Match paused before start.' : `${nameToShow} paused the game.`;
+    if (pauseWhoLabel) pauseWhoLabel.textContent = `${nameToShow} paused the game.`;
   } else if (type === 'resume') {
+    const wasPreMatch = !matchStarted;
+
     isPaused = false;
-    if (pauseMenu) pauseMenu.style.display = 'none';
-    lastUnpausedTime = performance.now();
-    if (pauseWhoLabel) pauseWhoLabel.textContent = '';
-    if (pauseStatusLabel) pauseStatusLabel.textContent = matchStarted ? `${nameToShow} resumed the game.` : '';
-    if (!matchStarted) {
-      matchStarted = true;
-      updatePauseMenuButtons(false);
+
+    if (pauseMenu) {
+      pauseMenu.style.display = 'none';
     }
-    startCountdown();
+
+    lastUnpausedTime = performance.now();
+
+    if (pauseWhoLabel) {
+      pauseWhoLabel.textContent = '';
+    }
+
+    if (!wasPreMatch && pauseStatusLabel) {
+      pauseStatusLabel.textContent = `${nameToShow} resumed the game.`;
+    }
+
+    if (wasPreMatch) {
+      matchStarted = true;
+      return;
+    }
   } else if (type === 'quit') {
     isPaused = false;
     if (pauseMenu) pauseMenu.style.display = 'none';

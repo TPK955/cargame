@@ -54,6 +54,7 @@ import {
   viewPosition,
   world,
 } from './runtime-context.js';
+import { startCountdown } from '../game/pause.js';
 
 export { gameState, lobbyRef, lobbyUI, readyButton, setLobbyRef, statusLabel };
 
@@ -215,16 +216,15 @@ if (newMatchBtn) {
       statusLabel.textContent = 'Only the host can reset the match.';
       return;
     }
-
-    resetMatch();
-    sendSnapshotPacket();
+      resetMatch();
+      sendSnapshotPacket();
   });
 }
 
 window.addEventListener('keydown', (event) => {
-  if (event.key === '1') gameState.phase = 'lobby';
-  if (event.key === '2') gameState.phase = 'playing';
-  if (event.key === '3') gameState.phase = 'endgame';
+  // if (event.key === '1') gameState.phase = 'lobby';
+  // if (event.key === '2') gameState.phase = 'playing';
+  // if (event.key === '3') gameState.phase = 'endgame';
   if ((event.key === 'R' || event.key === 'r') && event.shiftKey && isHost()) {
     resetMatch();
     sendSnapshotPacket();

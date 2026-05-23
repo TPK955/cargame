@@ -52,7 +52,7 @@ export function resetMatch(context) {
   runtimePowerups.hostResetPowerups();
 
   // Start countdown for all players before match begins
-  // startCountdown(() => {
+  startCountdown(() => {
   gameState.phase = 'playing';
   if (session.lobby) {
     session.lobby.state.phase = 'playing';
@@ -85,29 +85,11 @@ export function resetMatch(context) {
       });
     }
   }
-  // });
-    context.endgameNotificationShown = false;
 
-    resetPlayerForMatch(context, localPlayer, selfId);
-    for (const [peerId, player] of remotePlayers.entries()) {
-      resetPlayerForMatch(context, player, peerId);
-    }
+    callbacks.sendSnapshotPacket();
+});
 
-    callbacks.updateHpBar();
-    context.updateScoreDisplay();
-    callbacks.updateMatchTimerDisplay();
-
-
-    if (session.lobby) {
-      for (const id of callbacks.getActiveParticipantIds()) {
-        const player = session.lobby.state.players.get(id);
-        session.lobby.state.players.set(id, {
-          name: player?.name ?? '',
-          ready: false,
-        });
-      }
-    }
-  }
+}
 
 export function updateMatchTimerDisplay(context) {
   renderMatchTimerDisplay(context.dom.matchTimerDisplay, context.dom.globalMatchTimer, context.timers.matchTime);
