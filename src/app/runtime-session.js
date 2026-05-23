@@ -207,16 +207,6 @@ export function setupRoom(context) {
       gameState.endgameResults = payload.endgameResults ?? null;
     }
 
-    if (
-      payload.phase === 'endgame' &&
-      previousPhase !== 'endgame' &&
-      payload.endgameResults?.winnerId === selfId &&
-      !callbacks.isHost() &&
-      typeof showGameplayNotification === 'function'
-    ) {
-      showGameplayNotification('You win', 10000);
-    }
-
     participantIds.add(peerId);
     callbacks.refreshHostRole(payload.hostId ?? peerId);
 

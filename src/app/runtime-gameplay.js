@@ -612,6 +612,7 @@ export function applySnapshot(context, playerStates) {
     if (winner && typeof showGameplayNotification === 'function') {
       const isLocalWinner = winner.id === context.selfId;
 
+      console.log('from runtime-gameplay.js: ', isLocalWinner ? 'You win!' : `${winner.name} won the match!`);
       showGameplayNotification(
         isLocalWinner
           ? 'You win!'
