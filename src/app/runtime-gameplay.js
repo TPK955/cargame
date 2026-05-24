@@ -72,9 +72,18 @@ export function updateUIVisibility(context) {
 export function loop(context) {
   try {
     const handleNewMatch = () => {
-      if (context.callbacks.isHost()) {
-        context.callbacks.resetMatch();
-        context.callbacks.sendSnapshotPacket();
+      if (!context.callbacks.isHost() || !context.session.lobby) {
+        return;
+      }
+
+      const countdownStartAtMs = Date.now() + 600;
+      if (typeof context.session.sendLobby === 'function') {
+        context.session.sendLobby({ type: 'start', countdownStartAtMs });
+      }
+
+      context.session.lobby.state.phase = 'playing';
+      if (typeof context.session.lobby.handleMessage === 'function') {
+        context.session.lobby.handleMessage({ type: 'start', countdownStartAtMs }, context.selfId);
       }
     };
 

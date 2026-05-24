@@ -42,7 +42,7 @@ function resetPlayerForMatch(context, player, playerId) {
 
 }
 
-export function resetMatch(context) {
+export function resetMatch(context, countdownStartAtMs = Date.now()) {
   const { callbacks, gameState, localPlayer, remotePlayers, runtimePowerups, selfId, session, timers } = context;
 
   if (!callbacks.isHost()) {
@@ -87,7 +87,7 @@ export function resetMatch(context) {
   }
 
     callbacks.sendSnapshotPacket();
-});
+}, countdownStartAtMs);
 
 }
 

@@ -3,36 +3,61 @@ import { playCountdownSound, playStartMatchSound } from './audio/sound-manager.j
 // Countdown state
 let countdownActive = false;
 let countdownTimeout = null;
+const COUNTDOWN_SECONDS = 3;
+
+function clearCountdownTimer() {
+  if (countdownTimeout) {
+    clearTimeout(countdownTimeout);
+    countdownTimeout = null;
+  }
+}
 
 /**
  * Shows a 3-second countdown overlay and blocks gameplay until done.
  * Calls the provided callback when countdown completes.
  */
-export function startCountdown(callback) {
+export function startCountdown(callback, startAtMs = Date.now()) {
   if (countdownActive) return;
+
   countdownActive = true;
-  let seconds = 3;
-  if (gameplayNotification) {
-    playCountdownSound();
-    gameplayNotification.style.opacity = '1';
-    gameplayNotification.textContent = `Match starting in ${seconds}`;
-    
-  }
-  function tick() {
-    playCountdownSound();
-    seconds--;
-    if (seconds > 0) {
-      if (gameplayNotification) gameplayNotification.textContent = `Match starting in ${seconds}`;
-      countdownTimeout = setTimeout(tick, 1000);
-    } else {
-      if (gameplayNotification) gameplayNotification.style.opacity = '0';''
-      countdownActive = false;
-      playStartMatchSound();
-      showGameplayNotification('Match started!', 1000);
-      if (typeof callback === 'function') callback();
+  const safeStartAtMs = Number.isFinite(startAtMs) ? startAtMs : Date.now();
+  const endAtMs = safeStartAtMs + (COUNTDOWN_SECONDS * 1000);
+  let lastDisplayed = null;
+
+  function finishCountdown() {
+    clearCountdownTimer();
+    if (gameplayNotification) {
+      gameplayNotification.style.opacity = '0';
     }
+    countdownActive = false;
+    playStartMatchSound();
+    showGameplayNotification('Match started!', 1000);
+    if (typeof callback === 'function') callback();
   }
-  countdownTimeout = setTimeout(tick, 1000);
+
+  function tick() {
+    const nowMs = Date.now();
+    const remainingSeconds = Math.ceil((endAtMs - nowMs) / 1000);
+
+    if (remainingSeconds <= 0) {
+      finishCountdown();
+      return;
+    }
+
+    if (remainingSeconds !== lastDisplayed) {
+      lastDisplayed = remainingSeconds;
+      playCountdownSound();
+      if (gameplayNotification) {
+        gameplayNotification.style.opacity = '1';
+        gameplayNotification.textContent = `Match starting in ${remainingSeconds}`;
+      }
+    }
+
+    countdownTimeout = setTimeout(tick, 100);
+  }
+
+  clearCountdownTimer();
+  tick();
 }
 
 export function isCountdownActive() {
