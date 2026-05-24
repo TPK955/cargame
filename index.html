@@ -1,5 +1,3 @@
-    <div id="global-match-timer">00:00</div>
-  <div id="score-display"></div>
 <!doctype html>
 <html lang="en">
   <head>
@@ -9,6 +7,8 @@
   </head>
   <body>
     <div id="app">
+      <div id="global-match-timer">00:00</div>
+      <div id="score-display"></div>
       <div id="pause-menu" class="pause-menu" style="display:none">
         <div class="pause-menu__content">
            <h2>Paused</h2>
@@ -53,7 +53,9 @@
         </div>
       </div>
       <div id="editor-hud" class="hud" style="display:none"></div>
-      <div id="gameplay-notification" style="position:fixed;top:20%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:#fff;padding:1.5em 2em;border-radius:0.5em;font-size:1.2em;z-index:1000;pointer-events:none;opacity:0;transition:opacity 0.3s;text-align:center;max-width:80%;"></div>
+      <div id="gameplay-notification-container">
+        <div id="gameplay-notification" class="gameplay-notification"></div>
+      </div>
       <div id="scene"></div>
       <div id="ability-slots" style="display:none">
         <div id="ability-slot-left" class="ability-slot" data-empty="true">

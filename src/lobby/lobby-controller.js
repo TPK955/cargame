@@ -16,7 +16,7 @@ export function createLobbyController({
   isHost,
   getActiveParticipantIds,
   sendLobby,
-  onStartGame = () => {
+  onStartGame = (_payload) => {
     gameState.phase = 'playing';
   },
   onStateChange = () => {
@@ -113,13 +113,13 @@ export function createLobbyController({
 
       if (payload.phase === 'playing') {
         state.phase = 'playing';
-        onStartGame();
+        onStartGame(payload);
       }
     }
 
     if (payload.type === 'start') {
       state.phase = 'playing';
-      onStartGame();
+      onStartGame(payload);
     }
 
     if (payload.type === 'name-rejected') {

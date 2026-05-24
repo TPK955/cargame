@@ -3,35 +3,61 @@ import { playCountdownSound, playStartMatchSound } from './audio/sound-manager.j
 // Countdown state
 let countdownActive = false;
 let countdownTimeout = null;
+const COUNTDOWN_SECONDS = 3;
+
+function clearCountdownTimer() {
+  if (countdownTimeout) {
+    clearTimeout(countdownTimeout);
+    countdownTimeout = null;
+  }
+}
 
 /**
  * Shows a 3-second countdown overlay and blocks gameplay until done.
  * Calls the provided callback when countdown completes.
  */
-export function startCountdown(callback) {
+export function startCountdown(callback, startAtMs = Date.now()) {
   if (countdownActive) return;
+
   countdownActive = true;
-  let seconds = 3;
-  if (gameplayNotification) {
-    playCountdownSound();
-    gameplayNotification.style.opacity = '1';
-    gameplayNotification.textContent = `Starting in ${seconds}`;
-    
-  }
-  function tick() {
-    playCountdownSound();
-    seconds--;
-    if (seconds > 0) {
-      if (gameplayNotification) gameplayNotification.textContent = `Starting in ${seconds}`;
-      countdownTimeout = setTimeout(tick, 1000);
-    } else {
-      if (gameplayNotification) gameplayNotification.style.opacity = '0';
-      countdownActive = false;
-      playStartMatchSound();
-      if (typeof callback === 'function') callback();
+  const safeStartAtMs = Number.isFinite(startAtMs) ? startAtMs : Date.now();
+  const endAtMs = safeStartAtMs + (COUNTDOWN_SECONDS * 1000);
+  let lastDisplayed = null;
+
+  function finishCountdown() {
+    clearCountdownTimer();
+    if (gameplayNotification) {
+      gameplayNotification.style.opacity = '0';
     }
+    countdownActive = false;
+    playStartMatchSound();
+    showGameplayNotification('Match started!', 1000);
+    if (typeof callback === 'function') callback();
   }
-  countdownTimeout = setTimeout(tick, 1000);
+
+  function tick() {
+    const nowMs = Date.now();
+    const remainingSeconds = Math.ceil((endAtMs - nowMs) / 1000);
+
+    if (remainingSeconds <= 0) {
+      finishCountdown();
+      return;
+    }
+
+    if (remainingSeconds !== lastDisplayed) {
+      lastDisplayed = remainingSeconds;
+      playCountdownSound();
+      if (gameplayNotification) {
+        gameplayNotification.style.opacity = '1';
+        gameplayNotification.textContent = `Match starting in ${remainingSeconds}`;
+      }
+    }
+
+    countdownTimeout = setTimeout(tick, 100);
+  }
+
+  clearCountdownTimer();
+  tick();
 }
 
 export function isCountdownActive() {
@@ -41,6 +67,7 @@ export function isCountdownActive() {
 // Import lobbyRef to access player names
 import { lobbyRef, setLobbyRef } from '../main.js';
 import { gameState } from '../main.js';
+import { resetMatch } from '../app/runtime-match.js';
 // --- Multiplayer Pause Networking Setup ---
 // Call this from main.js: setupPauseNetworking(room, localPlayer)
 let isPaused = false;
@@ -123,7 +150,7 @@ export function initPauseMenu() {
 
 export function updatePauseMenuButtons(isPreMatch) {
   if (resumeBtn) {
-    resumeBtn.textContent = isPreMatch ? 'Start' : 'Resume';
+   resumeBtn.textContent = isPreMatch ? 'Start' : 'Resume';
   }
 
  if (quitBtn) {
@@ -136,23 +163,28 @@ export function setMatchStarted(started) {
   matchStarted = started;
 }
 
-export function showGameplayNotification(message, duration = 3000) {
-  if (!gameplayNotification) return;
-  if (gameplayNotificationTimeout) {
-    clearTimeout(gameplayNotificationTimeout);
-    gameplayNotificationTimeout = null;
-  }
+export function showGameplayNotification(message, duration = 5000) {
+  const notificationContainer = document.getElementById('gameplay-notification-container');
 
-  gameplayNotification.textContent = message;
-  gameplayNotification.style.opacity = '1';
+  if (!notificationContainer) return;
 
-  gameplayNotificationTimeout = setTimeout(() => {
-    if (gameplayNotification) {
-      gameplayNotification.style.opacity = '0';
-    }
-    gameplayNotificationTimeout = null;
+  const notification = document.createElement('div');
+
+  notification.className = 'gameplay-notification';
+  notification.textContent = message;
+  notification.style.opacity = '1';
+
+  notificationContainer.appendChild(notification);
+
+  setTimeout(() => {
+    notification.style.opacity = '0';
+
+    setTimeout(() => {
+      notification.remove();
+    }, 300);
   }, duration);
 }
+
 function triggerPauseAction(paused, action = 'pause') {
   // Only allow pausing in 'playing' phase
   if (!gameState || (gameState.phase !== 'playing') && (!matchStarted)) {
@@ -200,20 +232,33 @@ function applyPauseNetworkEvent({ type, peerId, displayName }) {
     isPaused = true;
     if (pauseMenu) pauseMenu.style.display = 'flex';
     const isPreMatch = !matchStarted;
-    updatePauseMenuButtons(isPreMatch);
+    updatePauseMenuButtons(!isPreMatch);
     // Show player name only if match has started
-    if (pauseWhoLabel) pauseWhoLabel.textContent = isPreMatch ? 'Match paused before start.' : `${nameToShow} paused the game.`;
+    // if (pauseWhoLabel) pauseWhoLabel.textContent = isPreMatch ? 'Match paused before start.' : `${nameToShow} paused the game.`;
+    if (pauseWhoLabel) pauseWhoLabel.textContent = `${nameToShow} paused the game.`;
   } else if (type === 'resume') {
+    const wasPreMatch = !matchStarted;
+
     isPaused = false;
-    if (pauseMenu) pauseMenu.style.display = 'none';
-    lastUnpausedTime = performance.now();
-    if (pauseWhoLabel) pauseWhoLabel.textContent = '';
-    if (pauseStatusLabel) pauseStatusLabel.textContent = matchStarted ? `${nameToShow} resumed the game.` : '';
-    if (!matchStarted) {
-      matchStarted = true;
-      updatePauseMenuButtons(false);
+
+    if (pauseMenu) {
+      pauseMenu.style.display = 'none';
     }
-    startCountdown();
+
+    lastUnpausedTime = performance.now();
+
+    if (pauseWhoLabel) {
+      pauseWhoLabel.textContent = '';
+    }
+
+    if (!wasPreMatch && pauseStatusLabel) {
+      pauseStatusLabel.textContent = `${nameToShow} resumed the game.`;
+    }
+
+    if (wasPreMatch) {
+      matchStarted = true;
+      return;
+    }
   } else if (type === 'quit') {
     isPaused = false;
     if (pauseMenu) pauseMenu.style.display = 'none';

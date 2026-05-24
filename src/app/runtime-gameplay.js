@@ -72,9 +72,18 @@ export function updateUIVisibility(context) {
 export function loop(context) {
   try {
     const handleNewMatch = () => {
-      if (context.callbacks.isHost()) {
-        context.callbacks.resetMatch();
-        context.callbacks.sendSnapshotPacket();
+      if (!context.callbacks.isHost() || !context.session.lobby) {
+        return;
+      }
+
+      const countdownStartAtMs = Date.now() + 600;
+      if (typeof context.session.sendLobby === 'function') {
+        context.session.sendLobby({ type: 'start', countdownStartAtMs });
+      }
+
+      context.session.lobby.state.phase = 'playing';
+      if (typeof context.session.lobby.handleMessage === 'function') {
+        context.session.lobby.handleMessage({ type: 'start', countdownStartAtMs }, context.selfId);
       }
     };
 
@@ -215,7 +224,9 @@ function applyLifeTick(context) {
 
   if (playerLives[selfId].isAlive() && !isOnFloorOrWall(localPlayer, collisionMap)) {
     playerLives[selfId].loseLife(constants.LIFE_TICK_DAMAGE);
-    playDamageSound();
+    const healthPercent = getPlayerHealthPercent(playerLives, selfId, constants.INITIAL_LIFE);
+    // console.log(`Applied life tick to local player. Health percent: ${healthPercent}`);
+    playDamageSound(healthPercent);
     if (!playerLives[selfId].isAlive()) {
       playDespawnSound();
       if (localPlayer.group.parentNode) {
@@ -235,7 +246,9 @@ function applyLifeTick(context) {
   for (const [peerId, player] of remotePlayers.entries()) {
     if (playerLives[peerId].isAlive() && !isOnFloorOrWall(player, collisionMap)) {
       playerLives[peerId].loseLife(constants.LIFE_TICK_DAMAGE);
-      playDamageSound();
+      const healthPercent = getPlayerHealthPercent(playerLives, peerId, constants.INITIAL_LIFE);
+      // console.log(`Applied life tick to remote player ${peerId}. Health percent: ${healthPercent}`);
+      playDamageSound(healthPercent);
       if (!playerLives[peerId].isAlive()) {
         playDespawnSound();
         if (typeof showGameplayNotification === 'function') {
@@ -612,6 +625,7 @@ export function applySnapshot(context, playerStates) {
     if (winner && typeof showGameplayNotification === 'function') {
       const isLocalWinner = winner.id === context.selfId;
 
+      console.log('from runtime-gameplay.js: ', isLocalWinner ? 'You win!' : `${winner.name} won the match!`);
       showGameplayNotification(
         isLocalWinner
           ? 'You win!'

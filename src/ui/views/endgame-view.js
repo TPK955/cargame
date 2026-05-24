@@ -62,7 +62,7 @@ export function renderEndgameUI(gameState, context) {
   if (winnerId && context?.selfId && winnerId === context.selfId) {
     try {
       playFanfareSound();
-      showGameplayNotification('You won the match!', 20000);
+      showGameplayNotification('You won the match!', 10000);
     } catch (e) {
       // swallow audio errors
       console.warn('Fanfare playback failed', e);

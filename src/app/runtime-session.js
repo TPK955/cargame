@@ -3,7 +3,7 @@ import { serializePlayerAbilities } from '../game/abilities';
 import { INPUT_SEND_INTERVAL_MS, MAX_PLAYERS } from '../game/config';
 import { normalizeInput, readCurrentInputState, serializeInput } from '../game/input';
 import { getActiveMap, getMapSpawn, mapCellToWorld } from '../game/map-data';
-import { setupPauseNetworking, setPaused, setLastUnpausedTime, showGameplayNotification } from '../game/pause.js';
+import { setupPauseNetworking, setPaused, setLastUnpausedTime, showGameplayNotification, startCountdown, updatePauseMenuButtons } from '../game/pause.js';
 import { serializeHeldAbilities } from '../game/powerups/effects';
 import { shortId } from '../game/utils';
 import { createLobbyController } from '../lobby/lobby-controller';
@@ -17,6 +17,8 @@ import {
   createRoomId,
   ensureRoomId,
 } from './runtime-room.js';
+
+let isPreMatch = false;
 
 export function setupUi(context) {
   const { dom, session } = context;
@@ -86,20 +88,28 @@ export function setupRoom(context) {
     isHost: callbacks.isHost,
     getActiveParticipantIds: callbacks.getActiveParticipantIds,
     sendLobby: session.sendLobby,
-    onStartGame: () => {
+    onStartGame: (payload) => {
       dom.statusLabel.textContent = callbacks.isHost()
         ? 'Game started! \n You are the host.'
         : 'Game started!';
 
+      const countdownStartAtMs = Number.isFinite(payload?.countdownStartAtMs)
+        ? payload.countdownStartAtMs
+        : Date.now();
+
       if (session.lobby) {
         context.lobbyUI.render(session.lobby, selfId, callbacks.getActiveParticipantIds, shortId);
       }
-
+/*
       gameState.phase = 'playing';
       setPaused(false);
       timers.matchTime = 0;
-      setLastUnpausedTime(performance.now());
-      callbacks.resetMatch();
+      setLastUnpausedTime(performance.now());*/
+      updatePauseMenuButtons(!isPreMatch);
+      if (!callbacks.isHost()) {
+        startCountdown(undefined, countdownStartAtMs);
+      }
+      callbacks.resetMatch(countdownStartAtMs);
       requestAnimationFrame(callbacks.loop);
     },
     onStateChange: () => {
@@ -207,16 +217,6 @@ export function setupRoom(context) {
       gameState.endgameResults = payload.endgameResults ?? null;
     }
 
-    if (
-      payload.phase === 'endgame' &&
-      previousPhase !== 'endgame' &&
-      payload.endgameResults?.winnerId === selfId &&
-      !callbacks.isHost() &&
-      typeof showGameplayNotification === 'function'
-    ) {
-      showGameplayNotification('You win', 10000);
-    }
-
     participantIds.add(peerId);
     callbacks.refreshHostRole(payload.hostId ?? peerId);
 
@@ -303,13 +303,14 @@ export function setupRoom(context) {
       }
 
       // Host sends start message to all peers
+      const countdownStartAtMs = Date.now() + 600;
       if (typeof session.sendLobby === 'function') {
-        session.sendLobby({ type: 'start' });
+        session.sendLobby({ type: 'start', countdownStartAtMs });
       }
       // Trigger local start
       session.lobby.state.phase = 'playing';
       // call configured onStartGame via lobby message handler
-      session.lobby && session.lobby.handleMessage && session.lobby.handleMessage({ type: 'start' }, selfId);
+      session.lobby && session.lobby.handleMessage && session.lobby.handleMessage({ type: 'start', countdownStartAtMs }, selfId);
     });
   }
 
