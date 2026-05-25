@@ -2,7 +2,7 @@
 
 import { renderLobbyUI, cleanupLobbyUI } from './views/lobby-view.js'
 import { renderPlayingUI, cleanupPlayingUI } from './views/playing-view.js'
-import { renderEndgameUI } from './views/endgame-view.js'
+import { renderEndgameUI, cleanupEndgameUI } from './views/endgame-view.js'
 
 let currentPhase = null
 
@@ -17,6 +17,9 @@ export function renderUI(gameState, context) {
         break
       case 'playing':
         cleanupPlayingUI()
+        break
+      case 'endgame':
+        cleanupEndgameUI()
         break
     }
 
