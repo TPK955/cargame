@@ -1,9 +1,14 @@
 import { spawn } from 'node:child_process';
+import { serveDist } from './serve-dist.js';
 
 const args = process.argv.slice(2);
 const mapMode = args.includes('-map');
 const forceHttp = args.includes('--http');
 const forwardedArgs = args.filter((arg) => arg !== '-map' && arg !== '--http');
+
+if (process.env.NODE_ENV === 'production') {
+  serveDist();
+} else {
 
 if (!forwardedArgs.includes('--host')) {
   forwardedArgs.push('--host');
@@ -71,3 +76,4 @@ child.on('error', (error) => {
 child.on('exit', (code) => {
   process.exit(code ?? 0);
 });
+}

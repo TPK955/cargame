@@ -428,6 +428,13 @@ Using a TURN server improves compatibility significantly.
 
 For cross-network multiplayer, the game must be hosted on a public HTTPS URL.
 
+Railway deployment is supported with:
+
+* Build command: `npm run build`
+* Start command: `npm start`
+
+In production (`NODE_ENV=production`), `npm start` serves the built `dist` output and binds to `PORT` automatically.
+
 Typical cross-network multiplayer flow:
 
 1. Open the public HTTPS URL
