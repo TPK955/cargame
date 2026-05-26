@@ -104,6 +104,16 @@ export function setupPauseNetworking(room, localPlayer) {
   }
 }
 
+export function broadcastQuitNotification() {
+  const playerObj = lobbyRef?.state?.players?.get(selfName);
+  const displayName = playerObj?.name?.trim() || selfName;
+  console.log('[pause] Broadcasting quit event for new room navigation...');
+  if (sendPause && typeof sendPause === 'function') {
+    sendPause({ type: 'quit', peerId: selfName, displayName });
+  }
+  applyPauseNetworkEvent({ type: 'quit', peerId: selfName, displayName });
+}
+
 export function initPauseMenu() {
   pauseMenu = document.getElementById('pause-menu');
   resumeBtn = document.getElementById('resume-btn');
@@ -114,7 +124,7 @@ export function initPauseMenu() {
   
   // Hide quit button initially (match hasn't started)
   if (quitBtn) {
-    quitBtn.style.display = 'none';
+    quitBtn.style.display = 'block';
   }
   if (gameplayNotification) {
     gameplayNotification.style.opacity = '0';
@@ -232,7 +242,7 @@ function applyPauseNetworkEvent({ type, peerId, displayName }) {
     isPaused = true;
     if (pauseMenu) pauseMenu.style.display = 'flex';
     const isPreMatch = !matchStarted;
-    updatePauseMenuButtons(!isPreMatch);
+    // updatePauseMenuButtons(!isPreMatch);
     // Show player name only if match has started
     // if (pauseWhoLabel) pauseWhoLabel.textContent = isPreMatch ? 'Match paused before start.' : `${nameToShow} paused the game.`;
     if (pauseWhoLabel) pauseWhoLabel.textContent = `${nameToShow} paused the game.`;
