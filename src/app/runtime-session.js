@@ -263,7 +263,7 @@ export function setupRoom(context) {
     const readyCount = active.filter(id => players.get(id)?.ready).length;
     // Always show the Play button, but disable for clients and when host doesn't meet criteria
     btn.style.display = '';
-    const canStart = activeCount >= 2 && activeCount <= 4 && readyCount >= 2;
+    const canStart = activeCount >= 2 && activeCount <= 4 && readyCount === activeCount;
     if (callbacks.isHost()) {
       btn.disabled = !canStart;
       btn.textContent = canStart ? 'Play Game' : `Play Game`;
@@ -292,9 +292,9 @@ export function setupRoom(context) {
       const active = callbacks.getActiveParticipantIds();
       const players = session.lobby.state.players;
       const readyCount = active.filter(id => players.get(id)?.ready).length;
-      if (!(active.length >= 2 && active.length <= 4 && readyCount >= 2)) {
+      if (!(active.length >= 2 && active.length <= 4 && readyCount === active.length)) {
         // Safety: button should be disabled, but double-check
-        dom.statusLabel.textContent = 'Not enough ready players to start.';
+        dom.statusLabel.textContent = 'All players must be ready to start.';
         return;
       }
 
