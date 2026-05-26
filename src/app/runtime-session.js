@@ -3,7 +3,7 @@ import { serializePlayerAbilities } from '../game/abilities';
 import { INPUT_SEND_INTERVAL_MS, MAX_PLAYERS } from '../game/config';
 import { normalizeInput, readCurrentInputState, serializeInput } from '../game/input';
 import { getActiveMap, getMapSpawn, mapCellToWorld } from '../game/map-data';
-import { setupPauseNetworking, setPaused, setLastUnpausedTime, showGameplayNotification, startCountdown, updatePauseMenuButtons, broadcastQuitNotification } from '../game/pause.js';
+import { setupPauseNetworking, setPaused, setLastUnpausedTime, showGameplayNotification, startCountdown, broadcastQuitNotification } from '../game/pause.js';
 import { serializeHeldAbilities } from '../game/powerups/effects';
 import { shortId } from '../game/utils';
 import { createLobbyController } from '../lobby/lobby-controller';
@@ -101,12 +101,7 @@ export function setupRoom(context) {
       if (session.lobby) {
         context.lobbyUI.render(session.lobby, selfId, callbacks.getActiveParticipantIds, shortId);
       }
-/*
-      gameState.phase = 'playing';
-      setPaused(false);
-      timers.matchTime = 0;
-      setLastUnpausedTime(performance.now());*/
-      updatePauseMenuButtons(!isPreMatch);
+
       if (!callbacks.isHost()) {
         startCountdown(undefined, countdownStartAtMs);
       }

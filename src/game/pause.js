@@ -158,17 +158,6 @@ export function initPauseMenu() {
   });
 }
 
-export function updatePauseMenuButtons(isPreMatch) {
-  if (resumeBtn) {
-   resumeBtn.textContent = isPreMatch ? 'Start' : 'Resume';
-  }
-
- if (quitBtn) {
-    quitBtn.style.display = isPreMatch ? 'none' : 'block';
-  }
-
-}
-
 export function setMatchStarted(started) {
   matchStarted = started;
 }
@@ -242,9 +231,6 @@ function applyPauseNetworkEvent({ type, peerId, displayName }) {
     isPaused = true;
     if (pauseMenu) pauseMenu.style.display = 'flex';
     const isPreMatch = !matchStarted;
-    // updatePauseMenuButtons(!isPreMatch);
-    // Show player name only if match has started
-    // if (pauseWhoLabel) pauseWhoLabel.textContent = isPreMatch ? 'Match paused before start.' : `${nameToShow} paused the game.`;
     if (pauseWhoLabel) pauseWhoLabel.textContent = `${nameToShow} paused the game.`;
   } else if (type === 'resume') {
     const wasPreMatch = !matchStarted;
