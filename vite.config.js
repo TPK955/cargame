@@ -1,11 +1,16 @@
-import basicSsl from '@vitejs/plugin-basic-ssl';
 import { defineConfig } from 'vite';
 
-export default defineConfig(() => {
+export default defineConfig(async () => {
   const useDevHttps = process.env.VITE_DEV_HTTPS === '1';
+  const plugins = [];
+
+  if (useDevHttps) {
+    const { default: basicSsl } = await import('@vitejs/plugin-basic-ssl');
+    plugins.push(basicSsl());
+  }
 
   return {
-    plugins: useDevHttps ? [basicSsl()] : [],
+    plugins,
     build: {
       rollupOptions: {
         output: {
