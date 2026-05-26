@@ -3,7 +3,7 @@ import { serializePlayerAbilities } from '../game/abilities';
 import { INPUT_SEND_INTERVAL_MS, MAX_PLAYERS } from '../game/config';
 import { normalizeInput, readCurrentInputState, serializeInput } from '../game/input';
 import { getActiveMap, getMapSpawn, mapCellToWorld } from '../game/map-data';
-import { setupPauseNetworking, setPaused, setLastUnpausedTime, showGameplayNotification, startCountdown, updatePauseMenuButtons } from '../game/pause.js';
+import { setupPauseNetworking, setPaused, setLastUnpausedTime, showGameplayNotification, startCountdown, broadcastQuitNotification } from '../game/pause.js';
 import { serializeHeldAbilities } from '../game/powerups/effects';
 import { shortId } from '../game/utils';
 import { createLobbyController } from '../lobby/lobby-controller';
@@ -37,6 +37,7 @@ export function setupUi(context) {
   };
 
   const handleNewRoom = () => {
+    broadcastQuitNotification();
     const nextUrl = new URL(window.location.href);
     nextUrl.searchParams.set('room', createRoomId());
     window.location.href = nextUrl.toString();
@@ -100,12 +101,7 @@ export function setupRoom(context) {
       if (session.lobby) {
         context.lobbyUI.render(session.lobby, selfId, callbacks.getActiveParticipantIds, shortId);
       }
-/*
-      gameState.phase = 'playing';
-      setPaused(false);
-      timers.matchTime = 0;
-      setLastUnpausedTime(performance.now());*/
-      updatePauseMenuButtons(!isPreMatch);
+
       if (!callbacks.isHost()) {
         startCountdown(undefined, countdownStartAtMs);
       }
@@ -267,7 +263,7 @@ export function setupRoom(context) {
     const readyCount = active.filter(id => players.get(id)?.ready).length;
     // Always show the Play button, but disable for clients and when host doesn't meet criteria
     btn.style.display = '';
-    const canStart = activeCount >= 2 && activeCount <= 4 && readyCount >= 2;
+    const canStart = activeCount >= 2 && activeCount <= 4 && readyCount === activeCount;
     if (callbacks.isHost()) {
       btn.disabled = !canStart;
       btn.textContent = canStart ? 'Play Game' : `Play Game`;
@@ -296,9 +292,9 @@ export function setupRoom(context) {
       const active = callbacks.getActiveParticipantIds();
       const players = session.lobby.state.players;
       const readyCount = active.filter(id => players.get(id)?.ready).length;
-      if (!(active.length >= 2 && active.length <= 4 && readyCount >= 2)) {
+      if (!(active.length >= 2 && active.length <= 4 && readyCount === active.length)) {
         // Safety: button should be disabled, but double-check
-        dom.statusLabel.textContent = 'Not enough ready players to start.';
+        dom.statusLabel.textContent = 'All players must be ready to start.';
         return;
       }
 

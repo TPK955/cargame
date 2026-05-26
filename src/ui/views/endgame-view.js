@@ -57,7 +57,7 @@ export function renderEndgameUI(gameState, context) {
           </li>
         `).join('')}
       </ol>
-      ${isHost ? `<button id="endgame-new-match-btn" class="endgame-panel__button">New Match</button>` : ''}
+      ${isHost && topThree.length > 1 ? `<button id="endgame-new-match-btn" class="endgame-panel__button">New Match</button>` : ''}
     </div>
   `;
 
