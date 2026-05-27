@@ -150,7 +150,7 @@ export function initPauseMenu() {
       applyPauseNetworkEvent({ type: 'quit', peerId: selfName, displayName });
       setTimeout(() => {
         window.location.href = window.location.origin;
-      }, 100);
+      }, 750);
     });
   }
   window.addEventListener('keydown', (e) => {
@@ -232,6 +232,7 @@ function applyPauseNetworkEvent({ type, peerId, displayName }) {
     if (pauseMenu) pauseMenu.style.display = 'flex';
     const isPreMatch = !matchStarted;
     if (pauseWhoLabel) pauseWhoLabel.textContent = `${nameToShow} paused the game.`;
+    showGameplayNotification(`${nameToShow} paused the game.`, 5000);
   } else if (type === 'resume') {
     const wasPreMatch = !matchStarted;
 
@@ -251,6 +252,8 @@ function applyPauseNetworkEvent({ type, peerId, displayName }) {
       pauseStatusLabel.textContent = `${nameToShow} resumed the game.`;
     }
 
+    showGameplayNotification(`${nameToShow} resumed the game.`, 5000);
+
     if (wasPreMatch) {
       matchStarted = true;
       return;
@@ -262,13 +265,7 @@ function applyPauseNetworkEvent({ type, peerId, displayName }) {
     if (pauseWhoLabel) pauseWhoLabel.textContent = '';
     if (pauseStatusLabel) pauseStatusLabel.textContent = `${nameToShow} quit the game.`;
     // Show quit notification during gameplay
-    if (gameplayNotification) {
-      gameplayNotification.textContent = `${nameToShow} quit the game.`;
-      gameplayNotification.style.opacity = '1';
-      setTimeout(() => {
-        if (gameplayNotification) gameplayNotification.style.opacity = '0';
-      }, 7000);
-    }
+    showGameplayNotification(`${nameToShow} quit the game.`, 7000);
   }
 }
 

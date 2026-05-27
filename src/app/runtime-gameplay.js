@@ -631,28 +631,6 @@ export function applySnapshot(context, playerStates) {
     }
   }
 
-  if (
-    previousPhase !== 'endgame'
-    && !context.endgameNotificationShown
-  ) {
-
-    context.endgameNotificationShown = true;
-
-    const winner = context.gameState.endgameResults?.[0];
-
-    if (winner && typeof showGameplayNotification === 'function') {
-      const isLocalWinner = winner.id === context.selfId;
-
-      console.log('from runtime-gameplay.js: ', isLocalWinner ? 'You win!' : `${winner.name} won the match!`);
-      showGameplayNotification(
-        isLocalWinner
-          ? 'You win!'
-          : `${winner.name} won the match!`,
-        10000
-      );
-    }
-  }
-
 }
 
 export function applyPickupEffect(context, type, player) {

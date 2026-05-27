@@ -4,10 +4,12 @@ import { showGameplayNotification } from '../../game/pause.js';
 
 let lastEndgameSignature = '';
 let hasPlayedWinnerFanfare = false;
+let lastWinnerNotificationSignature = '';
 
 export function cleanupEndgameUI() {
   lastEndgameSignature = '';
   hasPlayedWinnerFanfare = false;
+  lastWinnerNotificationSignature = '';
 }
 
 export function renderEndgameUI(gameState, context) {
@@ -65,10 +67,25 @@ export function renderEndgameUI(gameState, context) {
 
   // Play fanfare once per endgame phase for the local winner.
   const winnerId = gameState?.endgameResults?.winnerId;
+  const winnerNotificationSignature = JSON.stringify({
+    winnerId,
+    winnerName,
+    selfId: context?.selfId,
+  });
+
+  if (winnerId && winnerNotificationSignature !== lastWinnerNotificationSignature) {
+    lastWinnerNotificationSignature = winnerNotificationSignature;
+    showGameplayNotification(
+      winnerId === context?.selfId
+        ? 'You won the match!'
+        : `${winnerName} won the match!`,
+      10000
+    );
+  }
+
   if (!hasPlayedWinnerFanfare && winnerId && context?.selfId && winnerId === context.selfId) {
     try {
       playFanfareSound();
-      showGameplayNotification('You won the match!', 10000);
       hasPlayedWinnerFanfare = true;
     } catch (e) {
       // swallow audio errors
