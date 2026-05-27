@@ -16,6 +16,8 @@ import {
   canUseMultiplayer,
   createRoomId,
   ensureRoomId,
+  isRoomCreator,
+  markRoomCreator,
 } from './runtime-room.js';
 
 let isPreMatch = false;
@@ -39,7 +41,9 @@ export function setupUi(context) {
   const handleNewRoom = () => {
     broadcastQuitNotification();
     const nextUrl = new URL(window.location.href);
-    nextUrl.searchParams.set('room', createRoomId());
+    const nextRoomId = createRoomId();
+    markRoomCreator(nextRoomId);
+    nextUrl.searchParams.set('room', nextRoomId);
     window.location.href = nextUrl.toString();
   };
 
@@ -68,6 +72,14 @@ export function setupRoom(context) {
   }
 
   session.roomId = ensureRoomId();
+  session.isRoomCreator = isRoomCreator(session.roomId);
+  if (session.isRoomCreator) {
+    session.hostId = selfId;
+    session.hostConfirmed = true;
+  } else {
+    session.hostId = '';
+    session.hostConfirmed = false;
+  }
   dom.roomLabel.textContent = `Room: ${session.roomId}`;
   if (dom.pauseRoomLabel) {
     dom.pauseRoomLabel.textContent = `Room: ${session.roomId}`;
@@ -156,6 +168,7 @@ export function setupRoom(context) {
 
       session.sendLobby({
         type: 'state',
+        hostId: selfId,
         phase: session.lobby.state.phase,
         players,
       }, peerId);
@@ -242,6 +255,10 @@ export function setupRoom(context) {
   session.receiveLobby((payload, peerId) => {
     if (!session.lobby || !payload || typeof payload !== 'object') {
       return;
+    }
+
+    if (typeof payload.hostId === 'string') {
+      callbacks.refreshHostRole(payload.hostId);
     }
 
     session.lobby.handleMessage(payload, peerId);
@@ -415,11 +432,20 @@ export function updatePauseHostLabel(context) {
 
 export function refreshHostRole(context, forcedHostId) {
   const { callbacks, dom, selfId, session } = context;
+  const activeIds = callbacks.getActiveParticipantIds();
 
   if (typeof forcedHostId === 'string') {
     session.hostId = forcedHostId;
-  } else if (context.participantIds.size > 0) {
-    session.hostId = [...context.participantIds].sort()[0] ?? selfId;
+    session.hostConfirmed = true;
+  } else if (session.isRoomCreator && callbacks.isPeerActive(selfId)) {
+    // Room creator remains host while connected.
+    session.hostId = selfId;
+    session.hostConfirmed = true;
+  } else if (session.hostConfirmed && session.hostId && callbacks.isPeerActive(session.hostId)) {
+    // Keep the current host stable while they are still active.
+  } else if (activeIds.length > 0) {
+    // Before host is confirmed, prefer a non-self peer as likely room creator.
+    session.hostId = activeIds.find((id) => id !== selfId) ?? activeIds[0];
   }
 
   if (!callbacks.isPeerActive(selfId)) {

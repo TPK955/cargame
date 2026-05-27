@@ -8,6 +8,8 @@ import {
 } from '../game/config';
 import { isLocalOrPrivateHost } from '../game/utils';
 
+const ROOM_CREATOR_STORAGE_PREFIX = 'mp-room-creator:';
+
 export function createRoomId() {
   return Math.random().toString(36).slice(2, 8) + Math.random().toString(36).slice(2, 6);
 }
@@ -19,10 +21,27 @@ export function ensureRoomId() {
   if (!nextRoomId) {
     nextRoomId = createRoomId();
     url.searchParams.set('room', nextRoomId);
+    markRoomCreator(nextRoomId);
     window.history.replaceState({}, '', url);
   }
 
   return nextRoomId;
+}
+
+export function markRoomCreator(roomId) {
+  if (!roomId || typeof window === 'undefined') {
+    return;
+  }
+
+  window.sessionStorage?.setItem(`${ROOM_CREATOR_STORAGE_PREFIX}${roomId}`, '1');
+}
+
+export function isRoomCreator(roomId) {
+  if (!roomId || typeof window === 'undefined') {
+    return false;
+  }
+
+  return window.sessionStorage?.getItem(`${ROOM_CREATOR_STORAGE_PREFIX}${roomId}`) === '1';
 }
 
 export function buildRoomConfig() {

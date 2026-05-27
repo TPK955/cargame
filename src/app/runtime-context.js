@@ -84,7 +84,9 @@ export const sessionState = {
   receiveLobby: null,
   lobby: null,
   roomId: '',
-  hostId: selfId,
+  hostId: '',
+  hostConfirmed: false,
+  isRoomCreator: false,
 };
 
 initPauseMenu();

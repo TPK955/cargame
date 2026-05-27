@@ -145,6 +145,7 @@ export function createLobbyController({
 
     sendLobby({
       type: 'state',
+      hostId: selfId,
       phase: state.phase,
       players,
     });
