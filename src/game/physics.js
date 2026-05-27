@@ -11,12 +11,14 @@ import {
   BASE_SPEED_SCALE,
   BOOSTED_SPEED_SCALE,
   SPEED_RAMP_TIME_SECONDS,
+  STONE_COLLISION_PUSH_MULTIPLIER,
 } from './config';
 import {
   getShieldKnockbackScale,
   getSpeedBoostScale,
   isGhostActive,
   isShieldActive,
+  isStoneActive,
 } from './powerups/effects';
 import { clamp, lerp, Vec2 } from './math';
 import {
@@ -34,6 +36,15 @@ const ICE_TURN_RATE_SCALE = 0.42;
 const ICE_SPEED_RAMP_DECAY_SCALE = 0.35;
 
 export function simulateMovement(player, input, delta, now = performance.now() / 1000) {
+  if (isStoneActive(player, now)) {
+    player.previousPosition.copy(player.position);
+    player.speedRamp = 0;
+    player.velocity.set(0, 0);
+    player.impactVelocity.set(0, 0);
+    player.collisionMotion.set(0, 0);
+    return;
+  }
+
   const activeMap = getActiveMap();
   const onIce = isPlayerOnIceTile(player, activeMap);
   const traction = onIce ? 0.975 : 0.82;
@@ -104,6 +115,8 @@ export function resolvePlayerCollision(playerA, playerB, now = performance.now()
 
   const aShielded = isShieldActive(playerA, now);
   const bShielded = isShieldActive(playerB, now);
+  const aStone = isStoneActive(playerA, now);
+  const bStone = isStoneActive(playerB, now);
 
   const delta = playerA.position.clone().sub(playerB.position);
   const distance = delta.length();
@@ -118,7 +131,35 @@ export function resolvePlayerCollision(playerA, playerB, now = performance.now()
     ? delta.normalize()
     : getCollisionFallbackNormal(playerA, playerB);
 
-  applyPositionCorrection(playerA, playerB, normal, penetration, aShielded, bShielded);
+  applyPositionCorrection(playerA, playerB, normal, penetration, aShielded, bShielded, aStone, bStone);
+
+  if (aStone !== bStone) {
+    const mover = aStone ? playerB : playerA;
+    const pushDirection = aStone ? normal.clone().multiplyScalar(-1) : normal.clone();
+    const moverMotion = getCollisionMotion(mover);
+    const moverSpeed = moverMotion.length();
+    const pushStrength = moverSpeed * STONE_COLLISION_PUSH_MULTIPLIER;
+
+    if (pushStrength > 0.0001) {
+      mover.impactVelocity.addScaledVector(pushDirection, pushStrength);
+    }
+
+    const inwardDrive = mover.velocity.dot(pushDirection);
+    const inwardImpact = mover.impactVelocity.dot(pushDirection);
+    if (inwardDrive < 0) {
+      mover.velocity.addScaledVector(pushDirection, -inwardDrive);
+    }
+    if (inwardImpact < 0) {
+      mover.impactVelocity.addScaledVector(pushDirection, -inwardImpact);
+    }
+
+    resolveArenaCollision(mover);
+    return;
+  }
+
+  if (aStone && bStone) {
+    return;
+  }
 
   const motionA = getCollisionMotion(playerA);
   const motionB = getCollisionMotion(playerB);
@@ -142,14 +183,40 @@ export function resolvePlayerCollision(playerA, playerB, now = performance.now()
   resolveArenaCollision(playerB);
 }
 
-function applyPositionCorrection(playerA, playerB, normal, penetration, aShielded = false, bShielded = false) {
-  const correctionMagnitude = Math.max(penetration - COLLISION_POSITION_SLOP, 0)
-    / (inversePlayerMass + inversePlayerMass)
-    * COLLISION_POSITION_PERCENT;
+function applyPositionCorrection(
+  playerA,
+  playerB,
+  normal,
+  penetration,
+  aShielded = false,
+  bShielded = false,
+  aStone = false,
+  bStone = false,
+) {
+  const correctionMagnitude = Math.max(penetration - COLLISION_POSITION_SLOP, 0) * COLLISION_POSITION_PERCENT;
+  if (correctionMagnitude <= 0) {
+    return;
+  }
+
   const correction = normal.clone().multiplyScalar(correctionMagnitude);
 
-  if (!aShielded) playerA.position.addScaledVector(correction, inversePlayerMass);
-  if (!bShielded) playerB.position.addScaledVector(correction, -inversePlayerMass);
+  if (aStone && !bStone) {
+    if (!bShielded) {
+      playerB.position.addScaledVector(correction, -1);
+    }
+    return;
+  }
+
+  if (bStone && !aStone) {
+    if (!aShielded) {
+      playerA.position.addScaledVector(correction, 1);
+    }
+    return;
+  }
+
+  const splitCorrection = correction.multiplyScalar(0.5);
+  if (!aShielded && !aStone) playerA.position.add(splitCorrection);
+  if (!bShielded && !bStone) playerB.position.sub(splitCorrection);
 }
 
 function getCollisionFallbackNormal(playerA, playerB) {

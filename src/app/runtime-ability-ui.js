@@ -17,6 +17,9 @@ function setAbilitySlot(slot, iconEl, badgeEl, heldAbility) {
     } else if (heldAbility.type === 'bomb') {
       iconEl.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="13.5" r="6.5" fill="currentColor"/><path d="M10.5 6.8 13 4.3l2.7 2.7-2.5 2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M16.9 3.5h1.2M17.5 2.9v1.2M16.2 2.2l.8.8M16.2 4.8l.8-.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="8.6" cy="11.4" r="1.2" fill="rgba(255,255,255,0.35)"/></svg>';
       slot.dataset.ability = 'bomb';
+    } else if (heldAbility.type === 'stone') {
+      iconEl.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M11.8 3.2 6.5 5.4 3.2 10.8l1.3 6.1 4.9 3.9h5.9l4.7-3.9 1.4-5.9-2.9-5.3-5.7-2.5z"/><path fill="rgba(255,255,255,0.25)" d="m8.1 9.2 2.2-2 3.5-.8-2.9 2.7z"/><path fill="rgba(0,0,0,0.2)" d="m13.8 17.4 2.6-2 1-3.7-3.6 2.6z"/></svg>';
+      slot.dataset.ability = 'stone';
     } else {
       iconEl.textContent = '?';
       slot.dataset.ability = heldAbility.type;

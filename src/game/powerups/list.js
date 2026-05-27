@@ -6,4 +6,5 @@ export const POWERUP_NAMES = [
   'icebomb',
   'ghost',
   'bomb',
+  'stone',
 ];

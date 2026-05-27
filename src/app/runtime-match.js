@@ -24,6 +24,7 @@ function resetPlayerForMatch(context, player, playerId) {
   resetHeldAbilities(player);
   player.shield = { activeUntil: 0 };
   player.ghost = { activeUntil: 0 };
+  player.stone = { activeUntil: 0 };
   player.pendingBombDrop = null;
 
   const spawn = callbacks.getSpawnPoint(playerId);

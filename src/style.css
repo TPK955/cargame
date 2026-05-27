@@ -418,6 +418,11 @@ body {
   filter: drop-shadow(0 0 14px rgba(115, 216, 255, 0.62));
 }
 
+.ability-slot[data-ability="stone"] .ability-slot__icon {
+  color: #c5d0d8;
+  filter: drop-shadow(0 0 14px rgba(189, 204, 217, 0.58));
+}
+
 .ability-slot__badge {
   position: absolute;
   right: -8px;
@@ -903,6 +908,15 @@ body {
 
 .car--ghosted {
   opacity: 0.4;
+}
+
+.car--stone {
+  filter: saturate(0.15) brightness(0.72) contrast(1.12);
+}
+
+.car--stone .car__body {
+  background: linear-gradient(180deg, #c2c7cc, #8f969d);
+  box-shadow: inset 0 4px 10px rgba(255, 255, 255, 0.12), inset 0 -6px 10px rgba(0, 0, 0, 0.22);
 }
 
 @keyframes shield-pulse {

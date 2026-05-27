@@ -525,6 +525,15 @@ export function applySnapshot(context, playerStates) {
             : 0;
         }
 
+        if (playerState.stone) {
+          if (!context.localPlayer.stone) {
+            context.localPlayer.stone = { activeUntil: 0 };
+          }
+          context.localPlayer.stone.activeUntil = playerState.stone.remainingSeconds > 0
+            ? performance.now() / 1000 + playerState.stone.remainingSeconds
+            : 0;
+        }
+
         const wasAlive = context.playerLives[context.selfId]?.isAlive?.() ?? true;
         applyLifeSnapshotForPlayer(context.playerLives, context.constants.INITIAL_LIFE, playerState.id, playerState);
         const nowAlive = context.playerLives[context.selfId]?.isAlive?.() ?? true;
@@ -580,6 +589,15 @@ export function applySnapshot(context, playerStates) {
       }
       player.ghost.activeUntil = playerState.ghost.remainingSeconds > 0
         ? performance.now() / 1000 + playerState.ghost.remainingSeconds
+        : 0;
+    }
+
+    if (playerState.stone) {
+      if (!player.stone) {
+        player.stone = { activeUntil: 0 };
+      }
+      player.stone.activeUntil = playerState.stone.remainingSeconds > 0
+        ? performance.now() / 1000 + playerState.stone.remainingSeconds
         : 0;
     }
 

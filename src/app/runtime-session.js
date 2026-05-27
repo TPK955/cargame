@@ -370,6 +370,7 @@ export function sendSnapshotPacket(context, targetPeers) {
       heldAbilities: serializeHeldAbilities(player),
       shield: { activeUntil: player.shield?.activeUntil ?? 0 },
       ghost: { remainingSeconds: Math.max(0, (player.ghost?.activeUntil ?? 0) - snapshotNow) },
+      stone: { remainingSeconds: Math.max(0, (player.stone?.activeUntil ?? 0) - snapshotNow) },
       collected: player.collected ?? false,
       collided: player.collided ?? false,
       bombDropped: player.bombDropped ?? false,

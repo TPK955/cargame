@@ -11,6 +11,7 @@ import {
   SPEED_BOOST_DURATION_SECONDS,
   SPEED_BOOST_MAX_SPEED_SCALE,
   SPEED_BOOST_RAMP_UP_SECONDS,
+  STONE_DURATION_SECONDS,
 } from '../config';
 import { MAP_CELL_SIZE, MAP_WORLD_SIZE } from '../map-data';
 import { clamp, lerp } from '../math';
@@ -87,6 +88,14 @@ function ensureGhostState(player) {
   }
 
   return player.ghost;
+}
+
+function ensureStoneState(player) {
+  if (!player.stone) {
+    player.stone = { activeUntil: 0 };
+  }
+
+  return player.stone;
 }
 
 function getBaseMovementSpeedScale(player) {
@@ -203,6 +212,22 @@ export function activateGhost(player, now) {
 
 export function isGhostActive(player, now) {
   return now < (player.ghost?.activeUntil ?? 0);
+}
+
+export function stone(player) {
+  return pickupHeldAbility(player, 'stone');
+}
+
+export function activateStone(player, now) {
+  const stoneState = ensureStoneState(player);
+  stoneState.activeUntil = now + STONE_DURATION_SECONDS;
+  player.velocity?.set(0, 0);
+  player.impactVelocity?.set(0, 0);
+  return true;
+}
+
+export function isStoneActive(player, now) {
+  return now < (player.stone?.activeUntil ?? 0);
 }
 
 export function getShieldKnockbackScale(targetShielded, sourceShielded) {
@@ -543,6 +568,8 @@ export function activateHeldAbilitySlot(player, slotIndex, now = performance.now
     activated = activateIceBomb(player, now);
   } else if (entry.type === 'bomb') {
     activated = activateBomb(player, now);
+  } else if (entry.type === 'stone') {
+    activated = activateStone(player, now);
   }
 
   if (!activated) {
@@ -563,5 +590,6 @@ export function applyPowerupEffect(type, player, now = performance.now() / 1000)
   if (type === 'icebomb') return icebomb(player, now);
   if (type === 'ghost') return ghost(player, now);
   if (type === 'bomb') return bomb(player, now);
+  if (type === 'stone') return stone(player, now);
   return false;
 }
