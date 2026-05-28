@@ -640,7 +640,8 @@ export function applySnapshot(context, playerStates) {
     player.pendingBombDrop = null;
     player.lastSeenAt = now;
 
-    // Performance debugging
+    // Uncomment following block for performance debugging
+    /*
     if (shouldSnapToSnapshot) {
        console.log(
           'SNAP',
@@ -662,7 +663,8 @@ export function applySnapshot(context, playerStates) {
             dy: (playerState.z - player.position.y).toFixed(2),
           }
         );
-    }
+      }
+    */
 
     if (shouldSnapToSnapshot) {
       player.position.copy(player.targetPosition);
@@ -681,10 +683,6 @@ export function applySnapshot(context, playerStates) {
     } else if (!context.playerLives[playerState.id]?.isAlive?.() && player.group.parentNode) {
       context.world.remove(player.group);
     }
-  }
-
-  if (snapCount > 0) {
-    console.log('SNAPS THIS PACKET', snapCount);
   }
 
 }
