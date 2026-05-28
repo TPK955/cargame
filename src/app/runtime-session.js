@@ -114,9 +114,6 @@ export function setupRoom(context) {
         context.lobbyUI.render(session.lobby, selfId, callbacks.getActiveParticipantIds, shortId);
       }
 
-      if (!callbacks.isHost()) {
-        startCountdown(undefined, countdownStartAtMs);
-      }
       callbacks.resetMatch(countdownStartAtMs);
       requestAnimationFrame(callbacks.loop);
     },
@@ -479,7 +476,42 @@ export function isHost(context) {
 }
 
 export function getActiveParticipantIds(context) {
-  return [...context.participantIds].slice(0, MAX_PLAYERS);
+  const { participantIds, selfId, session } = context;
+  const participantOrder = [...participantIds];
+  const lobbyOrder = session.lobby?.state?.players
+    ? [...session.lobby.state.players.keys()]
+    : [];
+
+  const mergedOrder = [];
+  const seen = new Set();
+
+  const pushIfActive = (id) => {
+    if (!id || seen.has(id)) {
+      return;
+    }
+
+    if (participantIds.has(id) || id === selfId) {
+      mergedOrder.push(id);
+      seen.add(id);
+    }
+  };
+
+  // Prefer host-authoritative lobby order when available.
+  for (const id of lobbyOrder) {
+    pushIfActive(id);
+  }
+
+  // Ensure host is always first in fallback ordering.
+  if (session.hostId) {
+    pushIfActive(session.hostId);
+  }
+
+  // Append any remaining active peers discovered by transport events.
+  for (const id of participantOrder) {
+    pushIfActive(id);
+  }
+
+  return mergedOrder.slice(0, MAX_PLAYERS);
 }
 
 export function isPeerActive(context, peerId) {
@@ -493,7 +525,7 @@ export function getSpawnPoint(context, peerId) {
 }
 
 export function syncActiveRoster(context) {
-  const { callbacks, localPlayer, remotePlayers, selfId, viewPosition, world } = context;
+  const { callbacks, gameState, localPlayer, remotePlayers, selfId, viewPosition, world } = context;
 
   for (const [peerId, player] of remotePlayers.entries()) {
     if (!callbacks.isPeerActive(peerId)) {
@@ -502,9 +534,11 @@ export function syncActiveRoster(context) {
     }
   }
 
-  if (!callbacks.isPeerActive(selfId) && localPlayer.group.parentNode) {
+  const shouldShowLocalModel = callbacks.isPeerActive(selfId) && gameState.phase === 'playing';
+
+  if (!shouldShowLocalModel && localPlayer.group.parentNode) {
     world.remove(localPlayer.group);
-  } else if (callbacks.isPeerActive(selfId) && !localPlayer.group.parentNode) {
+  } else if (shouldShowLocalModel && !localPlayer.group.parentNode) {
     const spawnPoint = callbacks.getSpawnPoint(selfId);
     localPlayer.position.set(spawnPoint.x, spawnPoint.y);
     localPlayer.previousPosition.copy(localPlayer.position);

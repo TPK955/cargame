@@ -56,7 +56,7 @@ export function createPlayer(id, isLocal, color, spawnPosition) {
     ghost: { activeUntil: 0 },
     stone: { activeUntil: 0 },
     pendingBombDrop: null,
-    hasSnapshot: isLocal,
+    hasSnapshot: false,
     lastSeenAt: performance.now(),
   };
 

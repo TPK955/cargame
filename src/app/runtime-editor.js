@@ -136,7 +136,9 @@ export function createRuntimeEditor(options) {
       mapEditorInstance = null;
     }
 
-    world.add(localPlayer.group);
+    if (gameState.phase === 'playing') {
+      world.add(localPlayer.group);
+    }
     setupInput(keys);
   }
 

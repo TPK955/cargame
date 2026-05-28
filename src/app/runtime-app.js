@@ -268,8 +268,6 @@ runtimeEditor = createRuntimeEditor({
 });
 
 runtimeEditor.bindToggleButtons();
-
-world.add(localPlayer.group);
 setupInput(keys);
 setupRoom();
 setupUi();

@@ -7,7 +7,7 @@ import { selfId } from '@trystero-p2p/nostr';
 import { createLobbyUI } from '../ui/lobby-ui';
 import { createInputState } from '../game/input';
 import { getActiveMap, getMapSpawn, mapCellToWorld } from '../game/map-data';
-import { createPlayer, colorFromId } from '../game/players';
+import { createPlayer, colorFromId, syncPlayerTransform } from '../game/players';
 import { LifeSystem } from '../game/life.js';
 import { Vec2 } from '../game/math';
 import { createWorld } from '../game/scene';
@@ -156,8 +156,9 @@ export function ensureRemotePlayerWithLife(peerId, spawnPosition) {
     }
   }
 
-  if (playerLives[peerId]?.isAlive() && !player.group.parentNode) {
+  if (gameState.phase === 'playing' && playerLives[peerId]?.isAlive() && !player.group.parentNode) {
     world.add(player.group);
+    syncPlayerTransform(player);
   }
 
   if (!playerLives[peerId]?.isAlive() && player.group.parentNode) {
@@ -204,6 +205,8 @@ export function buildRuntimeContext({ runtimeEditor, runtimePowerups, callbacks 
     selfId,
     session: sessionState,
     setLobbyRef,
+    pendingSelfSnapshotAtRoundStart: null,
+    awaitingRoundStartSnapshot: false,
     timers: runtimeTimers,
     updateScoreDisplay,
     viewPosition,

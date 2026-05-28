@@ -328,12 +328,15 @@ export function updateLocalPlayerAbilityInput(context, player, input, now) {
 }
 
 export function updatePredictedLocalPlayer(context, delta) {
-  const input = readCurrentInputState(context.keys);
-  const now = performance.now() / 1000;
-  updateLocalPlayerAbilityInput(context, context.localPlayer, input, now);
-  simulateMovement(context.localPlayer, input, delta, now);
-  resolveArenaCollision(context.localPlayer);
-  resolveMapWallCollisions(context.localPlayer);
+  if (!context.localPlayer.hasSnapshot) {
+    context.localPlayer.velocity.set(0, 0);
+    context.localPlayer.impactVelocity.set(0, 0);
+    syncPlayerTransform(context.localPlayer);
+    return;
+  }
+
+  // Non-host local avatar is render-only and follows host snapshots.
+  // Running local collision prediction here causes visual divergence against walls.
   reconcileLocalPlayer(context, delta);
   syncPlayerTransform(context.localPlayer);
 }
@@ -502,9 +505,31 @@ export function applySnapshot(context, playerStates) {
   for (const playerState of playerList) {
     if (playerState.id === context.selfId) {
       if (!context.callbacks.isHost()) {
+        if (context.awaitingRoundStartSnapshot) {
+          if (isCountdownActive()) {
+            context.pendingSelfSnapshotAtRoundStart = playerState;
+            continue;
+          }
+
+          const roundStartSnapshot = context.pendingSelfSnapshotAtRoundStart ?? playerState;
+          context.pendingSelfSnapshotAtRoundStart = null;
+          context.awaitingRoundStartSnapshot = false;
+
+          context.localPlayer.position.set(roundStartSnapshot.x, roundStartSnapshot.z);
+          context.localPlayer.previousPosition.copy(context.localPlayer.position);
+          context.localPlayer.targetPosition.copy(context.localPlayer.position);
+          context.localPlayer.velocity.set(roundStartSnapshot.vx, roundStartSnapshot.vz);
+          context.localPlayer.targetVelocity.copy(context.localPlayer.velocity);
+          context.localPlayer.heading = roundStartSnapshot.heading;
+          context.localPlayer.targetHeading = roundStartSnapshot.heading;
+          context.viewPosition.copy(context.localPlayer.position);
+          context.world.setViewPosition(context.viewPosition.x, context.viewPosition.y);
+          syncPlayerTransform(context.localPlayer);
+        } else {
         context.localPlayer.targetPosition.set(playerState.x, playerState.z);
         context.localPlayer.targetVelocity.set(playerState.vx, playerState.vz);
         context.localPlayer.targetHeading = playerState.heading;
+        }
         context.localPlayer.score = Number(playerState.score ?? context.localPlayer.score ?? 0);
         context.localPlayer.totalScore = Number(playerState.totalScore ?? context.localPlayer.totalScore ?? 0);
         applyPlayerAbilitiesSnapshot(context.localPlayer, playerState.abilities);
@@ -557,9 +582,17 @@ export function applySnapshot(context, playerStates) {
         context.localPlayer.hasSnapshot = true;
         context.localPlayer.lastSeenAt = now;
 
-        if (context.playerLives[context.selfId]?.isAlive?.() && !context.localPlayer.group.parentNode) {
+        if (
+          context.gameState.phase === 'playing'
+          && context.playerLives[context.selfId]?.isAlive?.()
+          && !context.localPlayer.group.parentNode
+        ) {
           context.world.add(context.localPlayer.group);
-        } else if (!context.playerLives[context.selfId]?.isAlive?.() && context.localPlayer.group.parentNode) {
+          syncPlayerTransform(context.localPlayer);
+        } else if (
+          (context.gameState.phase !== 'playing' || !context.playerLives[context.selfId]?.isAlive?.())
+          && context.localPlayer.group.parentNode
+        ) {
           context.world.remove(context.localPlayer.group);
         }
       }
@@ -678,9 +711,17 @@ export function applySnapshot(context, playerStates) {
       player.heading = playerState.heading;
     }
 
-    if (context.playerLives[playerState.id]?.isAlive?.() && !player.group.parentNode) {
+    if (
+      context.gameState.phase === 'playing'
+      && context.playerLives[playerState.id]?.isAlive?.()
+      && !player.group.parentNode
+    ) {
       context.world.add(player.group);
-    } else if (!context.playerLives[playerState.id]?.isAlive?.() && player.group.parentNode) {
+      syncPlayerTransform(player);
+    } else if (
+      (context.gameState.phase !== 'playing' || !context.playerLives[playerState.id]?.isAlive?.())
+      && player.group.parentNode
+    ) {
       context.world.remove(player.group);
     }
   }
