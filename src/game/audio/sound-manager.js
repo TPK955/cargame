@@ -337,15 +337,17 @@ export function stopShieldSound() {
 
   const sourceToStop = shieldSource;
 
-  setTimeout(() => {
+  sourceToStop.onended = () => {
     try {
-      sourceToStop.stop();
+      sourceToStop.disconnect();
+      gainToDisconnect.disconnect();
     } catch {}
-  }, 300);
+  };
+
+  sourceToStop.stop(ctx.currentTime + 0.3);
 
   shieldSource = null;
   shieldGain = null;
-
   shieldPlaying = false;
 }
 
@@ -420,17 +422,20 @@ export function stopGhostSound() {
   // Smooth fade out
   ghostGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.25);
 
-  const sourceToStop = ghostSource;
+  const sourceToStop = ghostSource;;
+  const gainToDisconnect = ghostGain;
 
-  setTimeout(() => {
+  sourceToStop.onended = () => {
     try {
-      sourceToStop.stop();
+      sourceToStop.disconnect();
+      gainToDisconnect.disconnect();
     } catch {}
-  }, 300);
+  };
+
+  sourceToStop.stop(ctx.currentTime + 0.3);
 
   ghostSource = null;
   ghostGain = null;
-
   ghostPlaying = false;
 }
 
@@ -503,10 +508,9 @@ export function stopAllVehicleSounds() {
 
 function audioCleanupTrigger(src, gain) {
   src.onended = () => {
-    src.disconnect();
-
-    if (gain) {
-      gain.disconnect();
-    }
+    try {
+      src.disconnect();
+      gain?.disconnect();
+    } catch (e) {}
   };
 }
