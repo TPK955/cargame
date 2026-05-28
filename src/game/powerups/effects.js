@@ -15,6 +15,7 @@ import {
 } from '../config';
 import { MAP_CELL_SIZE, MAP_WORLD_SIZE } from '../map-data';
 import { clamp, lerp } from '../math';
+import { playStoneActivateSound } from '../audio/sound-manager';
 
 const SPEED_BOOST_ABILITY_ID = 'speedBoost';
 const SHIELD_KNOCKBACK_MULTIPLIER = 2.5;
@@ -223,6 +224,11 @@ export function activateStone(player, now) {
   stoneState.activeUntil = now + STONE_DURATION_SECONDS;
   player.velocity?.set(0, 0);
   player.impactVelocity?.set(0, 0);
+
+    if (player.isLocal) {
+      playStoneActivateSound();
+    }
+
   return true;
 }
 

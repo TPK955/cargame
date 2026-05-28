@@ -30,7 +30,8 @@ import {
   stopAllVehicleSounds,
   stopGhostSound,
   stopShieldSound,
-  updateEngineSound,
+  updateEngineSound, 
+  playStoneActivateSound,
 } from '../game/audio/sound-manager';
 import { applyHeldAbilitiesSnapshot, applyPowerupEffect } from '../game/powerups/effects';
 import { Vec2 } from '../game/math';
@@ -529,9 +530,10 @@ export function applySnapshot(context, playerStates) {
           if (!context.localPlayer.stone) {
             context.localPlayer.stone = { activeUntil: 0 };
           }
-          context.localPlayer.stone.activeUntil = playerState.stone.remainingSeconds > 0
-            ? performance.now() / 1000 + playerState.stone.remainingSeconds
-            : 0;
+          context.localPlayer.stone.activeUntil =
+            playerState.stone.remainingSeconds > 0
+              ? performance.now() / 1000 + playerState.stone.remainingSeconds
+              : 0;
         }
 
         const wasAlive = context.playerLives[context.selfId]?.isAlive?.() ?? true;
@@ -593,12 +595,23 @@ export function applySnapshot(context, playerStates) {
     }
 
     if (playerState.stone) {
+      //console.log("stone from 2nd playerState")
+      const wasStoneActive =
+    (player.stone?.activeUntil || 0) > performance.now() / 1000;
+    
       if (!player.stone) {
         player.stone = { activeUntil: 0 };
       }
       player.stone.activeUntil = playerState.stone.remainingSeconds > 0
         ? performance.now() / 1000 + playerState.stone.remainingSeconds
         : 0;
+
+        const isStoneActive =
+            (player.stone?.activeUntil || 0) > performance.now() / 1000;
+
+            if (!wasStoneActive && isStoneActive) {
+              playStoneActivateSound();
+            }
     }
 
     const wasAlive = context.playerLives[playerState.id]?.isAlive?.() ?? true;

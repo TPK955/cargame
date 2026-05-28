@@ -83,7 +83,6 @@ let sendPause = null;
 let selfName = '';
 let matchStarted = false; // Track if match has actually begun
 
-
 // Setup networking for pause actions. All peers (host or not) process all pause actions.
 export function setupPauseNetworking(room, localPlayer) {
   if (!room || !localPlayer) {
@@ -260,13 +259,26 @@ function applyPauseNetworkEvent({ type, peerId, displayName }) {
     }
   } else if (type === 'quit') {
     isPaused = false;
+    
     if (pauseMenu) pauseMenu.style.display = 'none';
     lastUnpausedTime = performance.now();
     if (pauseWhoLabel) pauseWhoLabel.textContent = '';
     if (pauseStatusLabel) pauseStatusLabel.textContent = `${nameToShow} quit the game.`;
     // Show quit notification during gameplay
+    processedQuits.add(peerId);
     showGameplayNotification(`${nameToShow} quit the game.`, 7000);
   }
+}
+
+const processedQuits = new Set();
+
+export function alreadyProcessedQuit(peerId) {
+  if (processedQuits.has(peerId)) {
+    return true;
+  }
+
+  processedQuits.add(peerId);
+  return false;
 }
 
 export function setPaused(paused, action = 'pause') {
