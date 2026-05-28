@@ -175,7 +175,7 @@ export function setupRoom(context) {
     }
 
     const displayName = session.lobby?.state?.players?.get(peerId)?.name?.trim() || shortId(peerId);
-    showGameplayNotification(`${displayName} joined`);
+    showGameplayNotification(`Player ${displayName} joined`);
   
   });
 
