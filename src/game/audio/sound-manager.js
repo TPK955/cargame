@@ -23,6 +23,7 @@ let despawnBuffer = null;
 let speedBoostBuffer = null;
 let shieldBuffer = null;
 let ghostBuffer = null;
+let stoneBuffer = null;
 let fanfareBuffer = null;
 let countdownBuffer = null;
 let startMatchBuffer = null;
@@ -63,6 +64,7 @@ export async function initAudio() {
   fanfareBuffer = await loadSound("/sounds/fanfare.wav");
   countdownBuffer = await loadSound("/sounds/countdown_signal.wav");
   startMatchBuffer = await loadSound("/sounds/countdown_final.wav");
+  stoneBuffer = await loadSound("sounds/stone.wav")
   engineSource = ctx.createBufferSource();
   engineSource.buffer = engineBuffer;
   engineSource.loop = true;
@@ -263,6 +265,27 @@ export function playSpeedBoostSound() {
   src.connect(gain).connect(ctx.destination);
 
   src.start(0);
+}
+
+export function playStoneActivateSound() {
+  if (!initialized || !stoneBuffer) return;
+
+    console.log('STONE SOUND');
+
+  if (ctx.state === "suspended") {
+    ctx.resume();
+  }
+
+  const src = ctx.createBufferSource();
+  src.buffer = stoneBuffer;
+
+  const gain = ctx.createGain();
+  gain.gain.value = 0.7;
+
+  src.connect(gain).connect(ctx.destination);
+
+  src.start(0);
+
 }
 
 export function startShieldSound() {
