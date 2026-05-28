@@ -37,5 +37,5 @@ export const SNAPSHOT_SEND_INTERVAL_MS = 16;
 export const INPUT_SEND_INTERVAL_MS = 16;
 export const LOCAL_RECONCILE_RATE = 11;
 export const REMOTE_INTERPOLATION_RATE = 12;
-export const SNAPSHOT_POSITION_SNAP_DISTANCE = 2.4;
+export const SNAPSHOT_POSITION_SNAP_DISTANCE = 8; // changed from original 2.4 which was causing snap errors and constant teleporting to position
 export const SNAPSHOT_VELOCITY_SNAP_DELTA = 12;

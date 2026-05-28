@@ -108,6 +108,7 @@ function sendInputPacket(force = false) {
 }
 
 function sendSnapshotPacket(targetPeers) {
+  // console.count('SNAPSHOT SENT');
   sendSnapshotPacketImpl(getRuntimeContext(), targetPeers);
 }
 
@@ -180,6 +181,7 @@ function getAllPlayers() {
 }
 
 function applySnapshot(playerStates) {
+  //console.count('SNAPSHOT RECEIVED');
   applySnapshotImpl(getRuntimeContext(), playerStates);
 }
 

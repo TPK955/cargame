@@ -51,20 +51,20 @@ export async function initAudio() {
   ctx = new (window.AudioContext || window.webkitAudioContext)();
 
   // Load samples
-  const engineBuffer = await loadSound("/sounds/engine_loop.wav");
-  collectBuffer = await loadSound("/sounds/collect.wav");
-  collisionBuffer = await loadSound("/sounds/collision.wav");
-  damageBuffer = await loadSound("/sounds/damage.wav");
-  despawnBuffer = await loadSound("/sounds/despawn.wav");
-  speedBoostBuffer = await loadSound("/sounds/speed_boost.wav");
-  shieldBuffer = await loadSound("/sounds/shield.wav");
-  explosionBuffer = await loadSound("/sounds/explosion.wav");
-  ghostBuffer = await loadSound("/sounds/ghost.wav");
-  bombDropBuffer = await loadSound("/sounds/bomb_drop.wav");
-  fanfareBuffer = await loadSound("/sounds/fanfare.wav");
-  countdownBuffer = await loadSound("/sounds/countdown_signal.wav");
-  startMatchBuffer = await loadSound("/sounds/countdown_final.wav");
-  stoneBuffer = await loadSound("sounds/stone.wav")
+  const engineBuffer = await loadSound("/sounds/engine_loop.ogg");
+  collectBuffer = await loadSound("/sounds/collect.ogg");
+  collisionBuffer = await loadSound("/sounds/collision.ogg");
+  damageBuffer = await loadSound("/sounds/damage.ogg");
+  despawnBuffer = await loadSound("/sounds/despawn.ogg");
+  speedBoostBuffer = await loadSound("/sounds/speed_boost.ogg");
+  shieldBuffer = await loadSound("/sounds/shield.ogg");
+  explosionBuffer = await loadSound("/sounds/explosion.ogg");
+  ghostBuffer = await loadSound("/sounds/ghost.ogg");
+  bombDropBuffer = await loadSound("/sounds/bomb_drop.ogg");
+  fanfareBuffer = await loadSound("/sounds/fanfare.ogg");
+  countdownBuffer = await loadSound("/sounds/countdown_signal.ogg");
+  startMatchBuffer = await loadSound("/sounds/countdown_final.ogg");
+  stoneBuffer = await loadSound("sounds/stone.ogg")
   engineSource = ctx.createBufferSource();
   engineSource.buffer = engineBuffer;
   engineSource.loop = true;
@@ -164,7 +164,11 @@ export function playCollectSound() {
   src.playbackRate.value = 0.95 + Math.random() * 0.3;
 
   src.connect(ctx.destination);
+  
+  audioCleanupTrigger(src);
+
   src.start(0);
+  
 }
 
 export function playCollisionSound(strength = 1) {
@@ -173,7 +177,7 @@ export function playCollisionSound(strength = 1) {
   const now = performance.now();
 
   // Prevent audio spam
-  if (now - lastCollisionSoundTime < 80) {
+  if (now - lastCollisionSoundTime < 150) {
     return;
   }
 
@@ -195,6 +199,8 @@ export function playCollisionSound(strength = 1) {
   gain.gain.value = Math.min(1, 0.2 + strength * 0.8);
 
   src.connect(gain).connect(ctx.destination);
+
+  audioCleanupTrigger(src, gain);
 
   src.start(0);
 }
@@ -226,6 +232,9 @@ export function playDamageSound(healthPercent) {
   }
 
   src.connect(gain).connect(ctx.destination);
+
+  audioCleanupTrigger(src, gain);
+
   src.start(0);
 }
 
@@ -243,6 +252,9 @@ export function playDespawnSound() {
   gain.gain.value = 0.6;
 
   src.connect(gain).connect(ctx.destination);
+
+  audioCleanupTrigger(src, gain);
+
   src.start(ctx.currentTime + 0.5);
 }
 
@@ -264,13 +276,13 @@ export function playSpeedBoostSound() {
 
   src.connect(gain).connect(ctx.destination);
 
+  audioCleanupTrigger(src, gain);
+
   src.start(0);
 }
 
 export function playStoneActivateSound() {
   if (!initialized || !stoneBuffer) return;
-
-    console.log('STONE SOUND');
 
   if (ctx.state === "suspended") {
     ctx.resume();
@@ -284,9 +296,11 @@ export function playStoneActivateSound() {
 
   src.connect(gain).connect(ctx.destination);
 
+  audioCleanupTrigger(src, gain);
+
   src.start(0);
 
-}
+ }
 
 export function startShieldSound() {
   if (!initialized || !shieldBuffer) return;
@@ -323,15 +337,17 @@ export function stopShieldSound() {
 
   const sourceToStop = shieldSource;
 
-  setTimeout(() => {
+  sourceToStop.onended = () => {
     try {
-      sourceToStop.stop();
+      sourceToStop.disconnect();
+      gainToDisconnect.disconnect();
     } catch {}
-  }, 300);
+  };
+
+  sourceToStop.stop(ctx.currentTime + 0.3);
 
   shieldSource = null;
   shieldGain = null;
-
   shieldPlaying = false;
 }
 
@@ -350,6 +366,8 @@ export function playBombDropSound() {
 
   src.connect(gain).connect(ctx.destination);
 
+  audioCleanupTrigger(src, gain);
+
   src.start(0);
 }
 
@@ -366,6 +384,8 @@ export function playExplosionSound() {
   src.playbackRate.value = 0.95 + Math.random() * 0.3;
 
   src.connect(ctx.destination);
+
+  audioCleanupTrigger(src);
   src.start(0);
 }
 
@@ -402,17 +422,20 @@ export function stopGhostSound() {
   // Smooth fade out
   ghostGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.25);
 
-  const sourceToStop = ghostSource;
+  const sourceToStop = ghostSource;;
+  const gainToDisconnect = ghostGain;
 
-  setTimeout(() => {
+  sourceToStop.onended = () => {
     try {
-      sourceToStop.stop();
+      sourceToStop.disconnect();
+      gainToDisconnect.disconnect();
     } catch {}
-  }, 300);
+  };
+
+  sourceToStop.stop(ctx.currentTime + 0.3);
 
   ghostSource = null;
   ghostGain = null;
-
   ghostPlaying = false;
 }
 
@@ -430,6 +453,8 @@ export function playFanfareSound() {
   gain.gain.value = 0.8;
 
   src.connect(gain).connect(ctx.destination);
+
+  audioCleanupTrigger(src, gain);
 
   src.start(0);
 }
@@ -449,6 +474,8 @@ export function playCountdownSound() {
 
   src.connect(gain).connect(ctx.destination);
 
+  audioCleanupTrigger(src, gain);
+
   src.start(0);
 }
 
@@ -467,6 +494,8 @@ export function playStartMatchSound() {
 
   src.connect(gain).connect(ctx.destination);
 
+  audioCleanupTrigger(src, gain);
+
   src.start(0);
 }
 
@@ -475,4 +504,13 @@ export function stopAllVehicleSounds() {
   updateEngineSound(0, 0);
   stopShieldSound();
   stopGhostSound();
+}
+
+function audioCleanupTrigger(src, gain) {
+  src.onended = () => {
+    try {
+      src.disconnect();
+      gain?.disconnect();
+    } catch (e) {}
+  };
 }

@@ -13,6 +13,7 @@ import {
   SNAPSHOT_POSITION_SNAP_DISTANCE,
   SNAPSHOT_SEND_INTERVAL_MS,
   SNAPSHOT_VELOCITY_SNAP_DELTA,
+  INPUT_SEND_INTERVAL_MS,
 } from '../game/config';
 import { readCurrentInputState } from '../game/input';
 import { LifeSystem, isOnFloorOrWall } from '../game/life.js';
@@ -148,7 +149,14 @@ export function loop(context) {
         context.timers.inputAccumulator += delta * 1000;
         updatePredictedLocalPlayer(context, delta);
         updateRemotePlayers(context, delta);
-        context.callbacks.sendInputPacket();
+
+        while (
+          context.timers.inputAccumulator >= INPUT_SEND_INTERVAL_MS
+        ) {
+          context.timers.inputAccumulator -= INPUT_SEND_INTERVAL_MS;
+          context.callbacks.sendInputPacket();
+        }
+
       }
 
       if (context.callbacks.isHost()) {
@@ -202,7 +210,7 @@ export function loop(context) {
     context.world.render();
 
     const ramp = context.localPlayer.speedRamp || 0;
-    const boostActive = context.localPlayer.abilities?.speedBoost?.activeUntil > (performance.now() / 1000);
+    const boostActive = context.localPlayer.abilities?.speedBoost?.activeUntil > nowSeconds;
 
     if (isAlive) {
       updateEngineSound(ramp, boostActive ? 1 : 0);
@@ -474,7 +482,9 @@ export function simulateAuthoritativeStep(context, delta) {
 }
 
 export function applySnapshot(context, playerStates) {
+  let snapCount = 0;
   const now = performance.now();
+  const nowSeconds = now / 1000;
   const previousPhase = context.gameState.phase;
 
   let playerList = playerStates;
@@ -522,7 +532,7 @@ export function applySnapshot(context, playerStates) {
             context.localPlayer.ghost = { activeUntil: 0 };
           }
           context.localPlayer.ghost.activeUntil = playerState.ghost.remainingSeconds > 0
-            ? performance.now() / 1000 + playerState.ghost.remainingSeconds
+            ? nowSeconds + playerState.ghost.remainingSeconds
             : 0;
         }
 
@@ -532,7 +542,7 @@ export function applySnapshot(context, playerStates) {
           }
           context.localPlayer.stone.activeUntil =
             playerState.stone.remainingSeconds > 0
-              ? performance.now() / 1000 + playerState.stone.remainingSeconds
+              ? nowSeconds + playerState.stone.remainingSeconds
               : 0;
         }
 
@@ -565,8 +575,14 @@ export function applySnapshot(context, playerStates) {
       player.hasSpawned = true;
     }
 
-    const positionError = player.position.distanceTo(new Vec2(playerState.x, playerState.z));
-    const velocityError = player.velocity.distanceTo(new Vec2(playerState.vx, playerState.vz));
+    const dx = player.position.x - playerState.x;
+    const dy = player.position.y - playerState.z;
+    const positionError = Math.hypot(dx, dy);
+
+    const dvx = player.velocity.x - playerState.vx;
+    const dvy = player.velocity.y - playerState.vz;
+    const velocityError = Math.hypot(dvx, dvy);
+
     const shouldSnapToSnapshot = positionError >= SNAPSHOT_POSITION_SNAP_DISTANCE
       || velocityError >= SNAPSHOT_VELOCITY_SNAP_DELTA;
 
@@ -590,24 +606,23 @@ export function applySnapshot(context, playerStates) {
         player.ghost = { activeUntil: 0 };
       }
       player.ghost.activeUntil = playerState.ghost.remainingSeconds > 0
-        ? performance.now() / 1000 + playerState.ghost.remainingSeconds
+        ? nowSeconds + playerState.ghost.remainingSeconds
         : 0;
     }
 
     if (playerState.stone) {
-      //console.log("stone from 2nd playerState")
       const wasStoneActive =
-    (player.stone?.activeUntil || 0) > performance.now() / 1000;
+    (player.stone?.activeUntil || 0) > nowSeconds;
     
       if (!player.stone) {
         player.stone = { activeUntil: 0 };
       }
       player.stone.activeUntil = playerState.stone.remainingSeconds > 0
-        ? performance.now() / 1000 + playerState.stone.remainingSeconds
+        ? nowSeconds + playerState.stone.remainingSeconds
         : 0;
 
         const isStoneActive =
-            (player.stone?.activeUntil || 0) > performance.now() / 1000;
+            (player.stone?.activeUntil || 0) > nowSeconds;
 
             if (!wasStoneActive && isStoneActive) {
               playStoneActivateSound();
@@ -624,6 +639,32 @@ export function applySnapshot(context, playerStates) {
 
     player.pendingBombDrop = null;
     player.lastSeenAt = now;
+
+    // Uncomment following block for performance debugging
+    /*
+    if (shouldSnapToSnapshot) {
+       console.log(
+          'SNAP',
+          playerState.id,
+          {
+            posErr: positionError.toFixed(2),
+
+            hostPos: {
+              x: playerState.x.toFixed(2),
+              z: playerState.z.toFixed(2),
+            },
+
+            clientPos: {
+              x: player.position.x.toFixed(2),
+              y: player.position.y.toFixed(2),
+            },
+
+            dx: (playerState.x - player.position.x).toFixed(2),
+            dy: (playerState.z - player.position.y).toFixed(2),
+          }
+        );
+      }
+    */
 
     if (shouldSnapToSnapshot) {
       player.position.copy(player.targetPosition);

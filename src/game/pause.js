@@ -106,7 +106,7 @@ export function setupPauseNetworking(room, localPlayer) {
 export function broadcastQuitNotification() {
   const playerObj = lobbyRef?.state?.players?.get(selfName);
   const displayName = playerObj?.name?.trim() || selfName;
-  console.log('[pause] Broadcasting quit event for new room navigation...');
+  // console.log('[pause] Broadcasting quit event for new room navigation...');
   if (sendPause && typeof sendPause === 'function') {
     sendPause({ type: 'quit', peerId: selfName, displayName });
   }
@@ -142,7 +142,7 @@ export function initPauseMenu() {
       // Quit button: broadcast quit and navigate immediately
       const playerObj = lobbyRef?.state?.players?.get(selfName);
       const displayName = playerObj?.name?.trim() || selfName;
-      console.log('[pause] Quit clicked, broadcasting quit event...');
+      // console.log('[pause] Quit clicked, broadcasting quit event...');
       if (sendPause && typeof sendPause === 'function') {
         sendPause({ type: 'quit', peerId: selfName, displayName });
       }
@@ -203,7 +203,7 @@ function triggerPauseAction(paused, action = 'pause') {
     return;
   }
   let displayName = playerObj.name.trim();
-  console.log('[pause] Sending pause event:', { type: action, peerId: selfName, displayName });
+  // console.log('[pause] Sending pause event:', { type: action, peerId: selfName, displayName });
   if (sendPause && typeof sendPause === 'function') {
     sendPause({ type: action, peerId: selfName, displayName });
   }
@@ -225,7 +225,7 @@ function applyPauseNetworkEvent({ type, peerId, displayName }) {
   } else if (!nameToShow || nameToShow.trim() === '') {
     nameToShow = 'Player';
   }
-  console.log('[pause] Received pause event:', { type, peerId, displayName, lobbyName, nameToShow });
+  // console.log('[pause] Received pause event:', { type, peerId, displayName, lobbyName, nameToShow });
   if (type === 'pause') {
     isPaused = true;
     if (pauseMenu) pauseMenu.style.display = 'flex';

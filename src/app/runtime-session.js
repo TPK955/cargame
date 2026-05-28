@@ -173,10 +173,14 @@ export function setupRoom(context) {
         players,
       }, peerId);
     }
+
+    const displayName = session.lobby?.state?.players?.get(peerId)?.name?.trim() || shortId(peerId);
+    showGameplayNotification(`Player ${displayName} joined`);
+  
   });
 
   session.room.onPeerLeave((peerId) => {
-    
+
     participantIds.delete(peerId);
     const player = remotePlayers.get(peerId);
     if (player) {
