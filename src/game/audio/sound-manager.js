@@ -165,7 +165,7 @@ export function playCollectSound() {
 
   src.connect(ctx.destination);
   
-  audioCleanupTrigger(src, gain);
+  audioCleanupTrigger(src);
 
   src.start(0);
   
