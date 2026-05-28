@@ -3,7 +3,7 @@ import { serializePlayerAbilities } from '../game/abilities';
 import { INPUT_SEND_INTERVAL_MS, MAX_PLAYERS } from '../game/config';
 import { normalizeInput, readCurrentInputState, serializeInput } from '../game/input';
 import { getActiveMap, getMapSpawn, mapCellToWorld } from '../game/map-data';
-import { setupPauseNetworking, setPaused, setLastUnpausedTime, showGameplayNotification, startCountdown, broadcastQuitNotification } from '../game/pause.js';
+import { setupPauseNetworking, setPaused, setLastUnpausedTime, showGameplayNotification, startCountdown, broadcastQuitNotification, alreadyProcessedQuit } from '../game/pause.js';
 import { serializeHeldAbilities } from '../game/powerups/effects';
 import { shortId } from '../game/utils';
 import { createLobbyController } from '../lobby/lobby-controller';
@@ -176,6 +176,7 @@ export function setupRoom(context) {
   });
 
   session.room.onPeerLeave((peerId) => {
+    
     participantIds.delete(peerId);
     const player = remotePlayers.get(peerId);
     if (player) {
@@ -186,6 +187,11 @@ export function setupRoom(context) {
     callbacks.refreshHostRole();
     updatePeerCount(context);
     updatePlayButtonState(context);
+
+    if (!alreadyProcessedQuit(peerId)) {
+      const displayName = session.lobby?.state?.players?.get(peerId)?.name?.trim() || shortId(peerId);
+      showGameplayNotification(`${displayName} disconnected`);
+    }
 
     if (callbacks.isHost()) {
       let ended = false;
