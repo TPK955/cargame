@@ -96,9 +96,11 @@ export function loop(context) {
       shortId,
       getActiveParticipantIds: context.callbacks.getActiveParticipantIds,
       getHealthPercent: context.callbacks.getHealthPercent,
+      isHost: context.callbacks.isHost,
       lobbyUI: context.lobbyUI,
       hostId: context.session.hostId,
       handleNewMatch,
+      onToggleSpawnMode: context.session.lobby?.handleLocalSpawnMode ?? null,
     });
 
     if (context.gameState.phase !== 'playing') {

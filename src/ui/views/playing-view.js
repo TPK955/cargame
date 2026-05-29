@@ -12,6 +12,8 @@ export function renderPlayingUI(gameState, context) {
       {
         phase: 'playing',
         getHealthPercent: context.getHealthPercent,
+        isHost: typeof context.isHost === 'function' ? context.isHost() : false,
+        onToggleSpawnMode: context.onToggleSpawnMode ?? null,
       }
     )
   }

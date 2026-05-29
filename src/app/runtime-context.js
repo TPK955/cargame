@@ -22,6 +22,7 @@ export const peerCountLabel = playHud.querySelector('#peer-count');
 export const statusLabel = playHud.querySelector('#status');
 export const copyLinkButton = playHud.querySelector('#copy-link');
 export const newRoomButton = playHud.querySelector('#new-room');
+export const spawnModeToggleButton = playHud.querySelector('#spawn-mode-toggle');
 export const pauseRoomLabel = document.getElementById('pause-room-label');
 export const pauseHostLabel = document.getElementById('pause-host-label');
 export const pauseCopyLinkButton = document.getElementById('pause-copy-link-btn');
@@ -190,6 +191,7 @@ export function buildRuntimeContext({ runtimeEditor, runtimePowerups, callbacks 
       playHud,
       readyButton,
       roomLabel,
+      spawnModeToggleButton,
       statusLabel,
     },
     ensureRemotePlayerWithLife,

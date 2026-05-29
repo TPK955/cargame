@@ -29,7 +29,7 @@ export function createRuntimePowerups(options) {
   } = options;
 
   let renderedPowerupEls = [];
-  let renderedBombEls = [];
+  let renderedBombEls = new Map();
   let powerups = [];
   let powerupTimers = [];
   let powerupSpawnAccumulator = 0;
@@ -154,9 +154,16 @@ export function createRuntimePowerups(options) {
   }
 
   function hostResetPowerups() {
+    for (const element of renderedBombEls.values()) {
+      if (element.parentNode) {
+        element.parentNode.removeChild(element);
+      }
+    }
+
     powerups = [];
     bombs = [];
     window.syncedBombs = [];
+    renderedBombEls = new Map();
     powerupTimers.forEach((entry) => clearTimeout(entry.timer));
     powerupTimers = [];
     powerupSpawnAccumulator = 0;

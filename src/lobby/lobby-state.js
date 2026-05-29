@@ -5,6 +5,8 @@ export function createLobbyState(selfId) {
     players: new Map(), // id -> { name: string, ready: boolean }
     hostId: selfId,
     phase: 'lobby', // 'lobby' | 'playing'
+    spawnMode: 'ordered', // 'ordered' | 'random'
+    spawnOrder: [],
   };
 }
 

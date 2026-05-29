@@ -79,6 +79,10 @@ function beginMatchCountdown(context, countdownStartAtMs) {
   context.endgameNotificationShown = false;
 
   if (callbacks.isHost()) {
+    if (session.lobby?.assignSpawnOrder) {
+      session.lobby.assignSpawnOrder();
+    }
+
     context.awaitingRoundStartSnapshot = false;
     context.pendingSelfSnapshotAtRoundStart = null;
     runtimePowerups.hostResetPowerups();

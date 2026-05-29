@@ -7,7 +7,10 @@ export function renderLobbyUI(gameState, context) {
 
   if (!lobby || !lobbyUI) return;
 
-  lobbyUI.render(lobby, selfId, getActiveParticipantIds, shortId);
+  lobbyUI.render(lobby, selfId, getActiveParticipantIds, shortId, {
+    isHost: typeof context.isHost === 'function' ? context.isHost() : false,
+    onToggleSpawnMode: context.onToggleSpawnMode ?? null,
+  });
 
   show("#lobby-list");
   show(".hud__card");

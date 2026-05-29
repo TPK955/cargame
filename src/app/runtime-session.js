@@ -67,6 +67,17 @@ export function setupUi(context) {
 export function setupRoom(context) {
   const { callbacks, dom, gameState, localPlayer, participantIds, remotePlayers, runtimePowerups, selfId, session, timers, world } = context;
 
+  function updateSpawnModeButtonState() {
+    if (!dom.spawnModeToggleButton || !session.lobby) {
+      return;
+    }
+
+    const spawnMode = session.lobby.state.spawnMode === 'random' ? 'random' : 'ordered';
+    dom.spawnModeToggleButton.textContent = spawnMode === 'random' ? 'Spawn: Random' : 'Spawn: Ordered';
+    dom.spawnModeToggleButton.disabled = !callbacks.isHost();
+    dom.spawnModeToggleButton.classList.toggle('disabled', !callbacks.isHost());
+  }
+
   if (session.lobby) {
     session.lobby.state.players.set(selfId, { ready: false });
   }
@@ -113,15 +124,16 @@ export function setupRoom(context) {
       if (session.lobby) {
         context.lobbyUI.render(session.lobby, selfId, callbacks.getActiveParticipantIds, shortId);
       }
+      updateSpawnModeButtonState();
 
       callbacks.resetMatch(countdownStartAtMs);
-      requestAnimationFrame(callbacks.loop);
     },
     onStateChange: () => {
       // Re-render lobby UI and update Play button state
       if (session.lobby) {
         context.lobbyUI.render(session.lobby, selfId, callbacks.getActiveParticipantIds, shortId);
       }
+      updateSpawnModeButtonState();
       updatePlayButtonState(context);
     },
   });
@@ -167,6 +179,8 @@ export function setupRoom(context) {
         type: 'state',
         hostId: selfId,
         phase: session.lobby.state.phase,
+        spawnMode: session.lobby.state.spawnMode,
+        spawnOrder: session.lobby.state.spawnOrder,
         players,
       }, peerId);
     }
@@ -229,6 +243,11 @@ export function setupRoom(context) {
       gameState.phase = payload.phase;
     }
 
+    if (session.lobby) {
+      session.lobby.state.spawnMode = payload.spawnMode === 'random' ? 'random' : 'ordered';
+      session.lobby.state.spawnOrder = Array.isArray(payload.spawnOrder) ? [...payload.spawnOrder] : [];
+    }
+
     if ('endgameResults' in payload) {
       gameState.endgameResults = payload.endgameResults ?? null;
     }
@@ -275,6 +294,18 @@ export function setupRoom(context) {
 
   dom.playHud.style.display = 'block';
   setupPauseNetworking(session.room, localPlayer);
+
+  if (dom.spawnModeToggleButton) {
+    dom.spawnModeToggleButton.addEventListener('click', () => {
+      if (!callbacks.isHost() || !session.lobby) {
+        return;
+      }
+
+      const nextMode = session.lobby.state.spawnMode === 'random' ? 'ordered' : 'random';
+      session.lobby.handleLocalSpawnMode(nextMode);
+      updateSpawnModeButtonState();
+    });
+  }
 
   // Wire up host Play button behavior and initial state
   const togglePlayBtn = document.getElementById('toggle-play');
@@ -324,17 +355,25 @@ export function setupRoom(context) {
 
       // Host sends start message to all peers
       const countdownStartAtMs = Date.now() + 600;
+      const spawnOrder = session.lobby.assignSpawnOrder();
+      const startPayload = {
+        type: 'start',
+        countdownStartAtMs,
+        spawnMode: session.lobby.state.spawnMode,
+        spawnOrder,
+      };
       if (typeof session.sendLobby === 'function') {
-        session.sendLobby({ type: 'start', countdownStartAtMs });
+        session.sendLobby(startPayload);
       }
       // Trigger local start
       session.lobby.state.phase = 'playing';
       // call configured onStartGame via lobby message handler
-      session.lobby && session.lobby.handleMessage && session.lobby.handleMessage({ type: 'start', countdownStartAtMs }, selfId);
+      session.lobby && session.lobby.handleMessage && session.lobby.handleMessage(startPayload, selfId);
     });
   }
 
   // Initialize Play button state
+  updateSpawnModeButtonState();
   updatePlayButtonState(context);
 }
 
@@ -374,6 +413,8 @@ export function sendSnapshotPacket(context, targetPeers) {
   session.sendSnapshot({
     hostId: selfId,
     phase: session.lobby?.state.phase ?? 'playing',
+    spawnMode: session.lobby?.state.spawnMode ?? 'ordered',
+    spawnOrder: Array.isArray(session.lobby?.state.spawnOrder) ? session.lobby.state.spawnOrder : [],
     endgameResults: gameState.endgameResults,
     matchTime: timers.matchTime,
     players: callbacks.getAllPlayers().map((player) => ({
@@ -519,7 +560,17 @@ export function isPeerActive(context, peerId) {
 }
 
 export function getSpawnPoint(context, peerId) {
-  const spawnIndex = Math.max(0, getActiveParticipantIds(context).indexOf(peerId));
+  const activeParticipantIds = getActiveParticipantIds(context);
+  const lobbyState = context.session.lobby?.state;
+  const shouldUseRandomSpawnOrder = lobbyState?.phase === 'playing'
+    && lobbyState?.spawnMode === 'random'
+    && Array.isArray(lobbyState?.spawnOrder)
+    && lobbyState.spawnOrder.length > 0;
+  const participantOrder = shouldUseRandomSpawnOrder
+    ? lobbyState.spawnOrder
+    : activeParticipantIds;
+  const orderedIndex = participantOrder.indexOf(peerId);
+  const spawnIndex = Math.max(0, orderedIndex >= 0 ? orderedIndex : activeParticipantIds.indexOf(peerId));
   const spawnCell = getMapSpawn(getActiveMap(), spawnIndex);
   return mapCellToWorld(spawnCell.x, spawnCell.y);
 }

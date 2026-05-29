@@ -449,11 +449,8 @@ export function renderBombEffects({
   worldScale,
   now = performance.now() / 1000,
 }) {
-  for (const el of renderedBombEls) {
-    if (el.parentNode) el.parentNode.removeChild(el);
-  }
-
-  const nextRenderedBombEls = [];
+  const previousEls = renderedBombEls instanceof Map ? renderedBombEls : new Map();
+  const nextRenderedBombEls = new Map();
   const list = isHostView ? bombs : syncedBombs;
   if (!Array.isArray(list)) return nextRenderedBombEls;
 
@@ -464,7 +461,17 @@ export function renderBombEffects({
     const bombType = bomb.type === 'icebomb' ? 'icebomb' : 'bomb';
 
     if (visual.kind === 'explosion') {
-      const explosion = document.createElement('div');
+      let explosion = previousEls.get(bomb.id);
+      if (!explosion || !explosion.classList.contains('bomb-explosion')) {
+        if (explosion?.parentNode) {
+          explosion.parentNode.removeChild(explosion);
+        }
+
+        explosion = document.createElement('div');
+        explosion.innerHTML = BOMB_SMOKE_MARKUP;
+        world.add(explosion);
+      }
+
       explosion.className = `bomb-explosion bomb-explosion--${bombType}`;
       explosion.style.left = left;
       explosion.style.top = top;
@@ -472,15 +479,22 @@ export function renderBombEffects({
       explosion.style.height = `${MAP_CELL_SIZE * worldScale * visual.diameterCells}px`;
       explosion.style.setProperty('--bomb-inner-zone-scale', `${visual.innerZoneScale}`);
       explosion.style.animationDelay = `-${Math.min(BOMB_EXPLOSION_DURATION_SECONDS, visual.elapsed)}s`;
-      explosion.innerHTML = BOMB_SMOKE_MARKUP;
-      world.add(explosion);
-      nextRenderedBombEls.push(explosion);
+      nextRenderedBombEls.set(bomb.id, explosion);
       continue;
     }
 
     const bombSize = MAP_CELL_SIZE * worldScale * 0.42;
-    const bombEl = document.createElement('div');
-  bombEl.className = `bomb-entity bomb-entity--${bombType}`;
+    let bombEl = previousEls.get(bomb.id);
+    if (!bombEl || !bombEl.classList.contains('bomb-entity')) {
+      if (bombEl?.parentNode) {
+        bombEl.parentNode.removeChild(bombEl);
+      }
+
+      bombEl = document.createElement('div');
+      world.add(bombEl);
+    }
+
+    bombEl.className = `bomb-entity bomb-entity--${bombType}`;
     bombEl.style.left = left;
     bombEl.style.top = top;
     bombEl.style.width = `${bombSize}px`;
@@ -489,8 +503,17 @@ export function renderBombEffects({
     bombEl.style.setProperty('--bomb-warning-opacity', `${visual.warningOpacity}`);
     bombEl.style.setProperty('--bomb-body-flicker-strength', `${visual.bodyFlickerStrength}`);
     bombEl.style.setProperty('--bomb-body-flash-opacity', `${visual.bodyFlashOpacity}`);
-    world.add(bombEl);
-    nextRenderedBombEls.push(bombEl);
+    nextRenderedBombEls.set(bomb.id, bombEl);
+  }
+
+  for (const [bombId, element] of previousEls.entries()) {
+    if (nextRenderedBombEls.has(bombId)) {
+      continue;
+    }
+
+    if (element.parentNode) {
+      element.parentNode.removeChild(element);
+    }
   }
 
   return nextRenderedBombEls;

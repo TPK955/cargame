@@ -14,6 +14,7 @@ export function createWorld(root) {
   root.replaceChildren();
   root.classList.add('scene-root');
   const activeMap = getActiveMap();
+  const tileSize = `${Math.ceil(MAP_CELL_SIZE * WORLD_SCALE) + 1}px`;
 
   const worldElement = document.createElement('div');
   worldElement.className = 'scene-world';
@@ -23,65 +24,117 @@ export function createWorld(root) {
   mapLayer.className = 'scene-map-layer';
   worldElement.append(mapLayer);
 
+  const outerZone = document.createElement('div');
+  outerZone.className = 'arena-zone arena-zone--outer';
+  mapLayer.append(outerZone);
+
+  const innerZone = document.createElement('div');
+  innerZone.className = 'arena-zone arena-zone--inner';
+  innerZone.style.width = `${MAP_INNER_ZONE_RADIUS * 2 * WORLD_SCALE}px`;
+  innerZone.style.height = `${MAP_INNER_ZONE_RADIUS * 2 * WORLD_SCALE}px`;
+  mapLayer.append(innerZone);
+
+  const arenaGrid = document.createElement('div');
+  arenaGrid.className = 'arena-grid';
+  arenaGrid.style.setProperty('--arena-grid-size', `${MAP_WORLD_SIZE * WORLD_SCALE}px`);
+  arenaGrid.style.setProperty('--arena-cell-size', `${MAP_CELL_SIZE * WORLD_SCALE}px`);
+  mapLayer.append(arenaGrid);
+
+  const floorLayer = document.createElement('div');
+  floorLayer.className = 'scene-map-tiles scene-map-tiles--floors';
+  mapLayer.append(floorLayer);
+
+  const iceLayer = document.createElement('div');
+  iceLayer.className = 'scene-map-tiles scene-map-tiles--ice';
+  mapLayer.append(iceLayer);
+
+  const wallLayer = document.createElement('div');
+  wallLayer.className = 'scene-map-tiles scene-map-tiles--walls';
+  mapLayer.append(wallLayer);
+
+  let floorEls = new Map();
+  let iceEls = new Map();
+  let wallEls = new Map();
+
   const actorLayer = document.createElement('div');
   actorLayer.className = 'scene-actor-layer';
   worldElement.append(actorLayer);
 
+  function getTileKey(tile) {
+    return `${tile.x},${tile.y}`;
+  }
+
+  function createFlatTileElement(className, tile) {
+    const rect = mapWallToWorldRect(tile);
+    const element = document.createElement('div');
+    element.className = className;
+    element.style.width = tileSize;
+    element.style.height = tileSize;
+    element.style.transform = `translate3d(${rect.minX * WORLD_SCALE}px, ${rect.minY * WORLD_SCALE}px, 0)`;
+    return element;
+  }
+
+  function createWallElement(tile) {
+    const rect = mapWallToWorldRect(tile);
+    const element = document.createElement('div');
+    element.className = 'arena-wall';
+    element.style.width = `${(rect.maxX - rect.minX) * WORLD_SCALE}px`;
+    element.style.height = `${(rect.maxY - rect.minY) * WORLD_SCALE}px`;
+    element.style.transform = `translate3d(${rect.minX * WORLD_SCALE}px, ${rect.minY * WORLD_SCALE}px, 0)`;
+    return element;
+  }
+
+  function syncTileLayer(layer, previousElements, tiles, createElement) {
+    const nextElements = new Map();
+
+    for (const tile of tiles) {
+      const key = getTileKey(tile);
+      let element = previousElements.get(key);
+      if (!element) {
+        element = createElement(tile);
+        layer.append(element);
+      }
+      nextElements.set(key, element);
+    }
+
+    for (const [key, element] of previousElements.entries()) {
+      if (nextElements.has(key)) {
+        continue;
+      }
+
+      if (element.parentNode === layer) {
+        layer.removeChild(element);
+      }
+    }
+
+    return nextElements;
+  }
+
   function renderMap(map) {
     root.dataset.arenaVariant = map.arenaVariant;
-    mapLayer.replaceChildren();
 
     const outerZoneRadius = map.arenaVariant === 'killzone'
       ? MAP_ARENA_ZONE_RADIUS
       : MAP_OUTER_ZONE_RADIUS;
 
-    const outerZone = document.createElement('div');
-    outerZone.className = 'arena-zone arena-zone--outer';
     outerZone.style.width = `${outerZoneRadius * 2 * WORLD_SCALE}px`;
     outerZone.style.height = `${outerZoneRadius * 2 * WORLD_SCALE}px`;
-    mapLayer.append(outerZone);
 
-    const innerZone = document.createElement('div');
-    innerZone.className = 'arena-zone arena-zone--inner';
-    innerZone.style.width = `${MAP_INNER_ZONE_RADIUS * 2 * WORLD_SCALE}px`;
-    innerZone.style.height = `${MAP_INNER_ZONE_RADIUS * 2 * WORLD_SCALE}px`;
-    mapLayer.append(innerZone);
+    floorEls = syncTileLayer(
+      floorLayer,
+      floorEls,
+      map.floors,
+      (tile) => createFlatTileElement('arena-floor-tile', tile),
+    );
 
-    const arenaGrid = document.createElement('div');
-    arenaGrid.className = 'arena-grid';
-    arenaGrid.style.setProperty('--arena-grid-size', `${MAP_WORLD_SIZE * WORLD_SCALE}px`);
-    arenaGrid.style.setProperty('--arena-cell-size', `${MAP_CELL_SIZE * WORLD_SCALE}px`);
-    mapLayer.append(arenaGrid);
+    iceEls = syncTileLayer(
+      iceLayer,
+      iceEls,
+      map.ice ?? [],
+      (tile) => createFlatTileElement('arena-ice-tile', tile),
+    );
 
-    for (const floor of map.floors) {
-      const rect = mapWallToWorldRect(floor);
-      const floorElement = document.createElement('div');
-      floorElement.className = 'arena-floor-tile';
-      floorElement.style.width = `${Math.ceil(MAP_CELL_SIZE * WORLD_SCALE) + 1}px`;
-      floorElement.style.height = `${Math.ceil(MAP_CELL_SIZE * WORLD_SCALE) + 1}px`;
-      floorElement.style.transform = `translate3d(${rect.minX * WORLD_SCALE}px, ${rect.minY * WORLD_SCALE}px, 0)`;
-      mapLayer.append(floorElement);
-    }
-    
-      for (const iceTile of map.ice ?? []) {
-        const rect = mapWallToWorldRect(iceTile);
-        const iceElement = document.createElement('div');
-        iceElement.className = 'arena-ice-tile';
-        iceElement.style.width = `${Math.ceil(MAP_CELL_SIZE * WORLD_SCALE) + 1}px`;
-        iceElement.style.height = `${Math.ceil(MAP_CELL_SIZE * WORLD_SCALE) + 1}px`;
-        iceElement.style.transform = `translate3d(${rect.minX * WORLD_SCALE}px, ${rect.minY * WORLD_SCALE}px, 0)`;
-        mapLayer.append(iceElement);
-      }
-
-    for (const wall of map.walls) {
-      const rect = mapWallToWorldRect(wall);
-      const wallElement = document.createElement('div');
-      wallElement.className = 'arena-wall';
-      wallElement.style.width = `${(rect.maxX - rect.minX) * WORLD_SCALE}px`;
-      wallElement.style.height = `${(rect.maxY - rect.minY) * WORLD_SCALE}px`;
-      wallElement.style.transform = `translate3d(${rect.minX * WORLD_SCALE}px, ${rect.minY * WORLD_SCALE}px, 0)`;
-      mapLayer.append(wallElement);
-    }
+    wallEls = syncTileLayer(wallLayer, wallEls, map.walls, createWallElement);
   }
 
   renderMap(activeMap);

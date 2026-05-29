@@ -24,6 +24,16 @@ export function setupInput(keys) {
   window.addEventListener('keyup', (event) => {
     setKey(keys, event.code, false);
   });
+
+  window.addEventListener('blur', () => {
+    resetKeys(keys);
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      resetKeys(keys);
+    }
+  });
 }
 
 export function readCurrentInputState(keys) {
@@ -73,5 +83,11 @@ function setKey(keys, code, pressed) {
     keys.ability2 = pressed;
   } else if (code === 'Space') {
     keys.speedBoost = pressed;
+  }
+}
+
+function resetKeys(keys) {
+  for (const key of Object.keys(keys)) {
+    keys[key] = false;
   }
 }
